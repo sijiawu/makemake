@@ -7,6 +7,7 @@ const port = 3000;
 
 // Model import
 const Task = require('./models/Task'); // Ensure this path matches your project structure
+const { breakdownPrompt } = require('./prompts');
 
 app.use(express.json()); // Middleware to parse JSON bodies
 
@@ -89,7 +90,7 @@ app.post('/tasks/:id/breakdown', async (req, res) => {
     }
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo", // Adjust according to the latest available model
-      messages: [{ role: 'user', content: `Given the task titled "${task.title}" with the description "${task.description}", generate a detailed list of subtasks required to complete it. Each subtask should include an estimated reluctance score from 1 to 5, with 5 being the hardest. Format the response as follows: subtask title - reluctance score.` }],
+      messages: [{ role: 'user', content: breakdownPrompt(task.title, task.description) }],
     }).catch(err => {
       console.error("OpenAI API error:", err);
       throw new Error("Failed to generate subtasks due to an OpenAI API error.");
