@@ -14,7 +14,7 @@ const AllTasksScreen = () => {
 
   const fetchTasks = async () => {
     try {
-      const response = await axios.get('/tasks');
+      const response = await axios.get('/tasks/active');
       setTasks(response.data);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);

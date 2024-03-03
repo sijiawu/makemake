@@ -43,6 +43,15 @@ app.get('/tasks', async (req, res) => {
   }
 });
 
+app.get('/tasks/active', async (req, res) => {
+  try {
+    const tasks = await Task.find({ completed_at: null });
+    res.status(200).send(tasks);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 // Putting it all the way up here to get it matched first
 app.get('/tasks/completed', async (req, res) => {
   try {
@@ -162,10 +171,11 @@ app.get('/tasks/subtasks/:taskId', async (req, res) => {
   try {
     const masterTaskId = req.params.taskId;
     const subtasks = await Task.find({ masterTaskId: masterTaskId });
+    // 0 is fine!
 
-    if (subtasks.length === 0) {
-      return res.status(404).send({ message: 'No subtasks found for this task.' });
-    }
+    // if (subtasks.length === 0) {
+    //   return res.status(404).send({ message: 'No subtasks found for this task.' });
+    // }
 
     res.status(200).json(subtasks);
   } catch (error) {
