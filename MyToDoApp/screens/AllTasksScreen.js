@@ -32,8 +32,9 @@ const AllTasksScreen = () => {
 
   const markTaskAsCompleted = async (taskId) => {
     try {
-      await axios.patch(`/tasks/${taskId}`, { completed: true });
+      await axios.patch(`/tasks/${taskId}`, { completed: true, completed_at: new Date() });
       fetchTasks(); // Refresh the list to reflect the task is completed
+      navigation.navigate('CompletedTasks');
     } catch (error) {
       console.error("Failed to mark task as completed:", error);
     }
@@ -71,7 +72,6 @@ const AllTasksScreen = () => {
             </TouchableOpacity>
           </View>
         )}
-        leftOpenValue={75}
         rightOpenValue={-150}
       />
     </View>

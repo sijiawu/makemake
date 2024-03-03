@@ -45,8 +45,8 @@ const DetailsScreen = ({ route, navigation }) => {
 
   async function markTaskAsCompleted(taskId) {
     try {
-      await axios.patch(`/tasks/${taskId}`, { completed: true });
-      navigation.goBack(); // Or refresh the task to show its updated state
+      await axios.patch(`/tasks/${taskId}`, { completed: true, completed_at: new Date() });
+      navigation.navigate('CompletedTasks');
     } catch (error) {
       console.error("Failed to mark task as completed:", error);
     }

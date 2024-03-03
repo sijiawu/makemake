@@ -17,6 +17,10 @@ const taskSchema = new mongoose.Schema({
     type: Boolean,
     default: false, // By default, tasks are not completed
   },
+  completed_at: {
+    type: Date,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now, // Automatically set the task creation time

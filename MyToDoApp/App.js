@@ -5,6 +5,7 @@ import HomeScreen from './screens/HomeScreen';
 import DetailsScreen from './screens/DetailsScreen';
 import AllTasksScreen from './screens/AllTasksScreen'; 
 import BreakdownScreen from './screens/BreakdownScreen';
+import CompletedTasksScreen from './screens/CompletedTasksScreen';
 
 import 'react-native-gesture-handler';
 
@@ -18,6 +19,7 @@ function App() {
         <Stack.Screen name="Details" component={DetailsScreen} />
         <Stack.Screen name="All Tasks" component={AllTasksScreen} />
         <Stack.Screen name="Breakdown" component={BreakdownScreen} />
+        <Stack.Screen name="CompletedTasks" component={CompletedTasksScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

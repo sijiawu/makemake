@@ -43,6 +43,17 @@ app.get('/tasks', async (req, res) => {
   }
 });
 
+// Putting it all the way up here to get it matched first
+app.get('/tasks/completed', async (req, res) => {
+  try {
+    const completedTasks = await Task.find({ completed_at: { $ne: null } });
+    console.log(completedTasks)
+    res.json(completedTasks);
+  } catch (error) {
+    res.status(500).send({ message: "Failed to fetch completed tasks." });
+  }
+});
+
 // Get a single task by id
 app.get('/tasks/:id', async (req, res) => {
   try {
@@ -113,7 +124,6 @@ app.post('/tasks/:id/breakdown', async (req, res) => {
     res.status(500).send({ message: error.message || "An error occurred." });
   }
 });
-
 
 app.post('/tasks/:id/saveSubtasks', async (req, res) => {
   const { id } = req.params;
