@@ -1,40 +1,78 @@
-// AllTasksScreen.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Button, StyleSheet } from 'react-native';
-import axios from 'axios'; // Assuming you're using Axios for HTTP requests
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Button } from 'react-native';
+import { SwipeListView } from 'react-native-swipe-list-view';
+import axios from '../axiosConfig'; // Adjust this path to your axios config file
+import { useNavigation } from '@react-navigation/native';
 
-const AllTasksScreen = ({ navigation }) => {
+const AllTasksScreen = () => {
   const [tasks, setTasks] = useState([]);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await axios.get('http://localhost:3000/tasks');
-        setTasks(response.data);
-      } catch (error) {
-        console.error("Failed to fetch tasks:", error);
-      }
-    };
-
     fetchTasks();
   }, []);
 
+  const fetchTasks = async () => {
+    try {
+      const response = await axios.get('/tasks');
+      setTasks(response.data);
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    try {
+      await axios.delete(`/tasks/${taskId}`);
+      fetchTasks(); // Refresh the list after deletion
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+    }
+  };
+
+  const markTaskAsCompleted = async (taskId) => {
+    try {
+      await axios.patch(`/tasks/${taskId}`, { completed: true });
+      fetchTasks(); // Refresh the list to reflect the task is completed
+    } catch (error) {
+      console.error("Failed to mark task as completed:", error);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <FlatList
+      <SwipeListView
         data={tasks}
-        keyExtractor={(item) => item._id.toString()} // Use _id as a unique key for each item
+        keyExtractor={(item) => item._id.toString()}
         renderItem={({ item }) => (
-          <View style={styles.taskItem}>
+          <TouchableOpacity
+            style={styles.taskItem}
+            onPress={() => navigation.navigate('Details', { task: item })}
+          >
             <Text style={styles.taskTitle}>{item.title}</Text>
             <Text>Description: {item.description}</Text>
-            {/* Other details */}
-            <Button
-              title="Tackle"
-              onPress={() => navigation.navigate('Details', {task: item})}
-            />
+            {item.note ? <Text>Note: {item.note}</Text> : null}
+            <Text>Completed: {item.completed ? 'Yes' : 'No'}</Text>
+          </TouchableOpacity>
+        )}
+        renderHiddenItem={(data, rowMap) => (
+          <View style={styles.rowBack}>
+            <TouchableOpacity
+              style={[styles.backRightBtn, styles.backRightBtnRight]}
+              onPress={() => deleteTask(data.item._id)}
+            >
+              <Text style={styles.backTextWhite}>Delete</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.backRightBtn, styles.backRightBtnLeft]}
+              onPress={() => markTaskAsCompleted(data.item._id)}
+            >
+              <Text style={styles.backTextWhite}>This is done!</Text>
+            </TouchableOpacity>
           </View>
         )}
+        leftOpenValue={75}
+        rightOpenValue={-150}
       />
     </View>
   );
@@ -43,17 +81,43 @@ const AllTasksScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 10,
   },
   taskItem: {
-    padding: 10,
-    marginVertical: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+    padding: 20,
   },
   taskTitle: {
-    fontSize: 18,
     fontWeight: 'bold',
+  },
+  rowBack: {
+    alignItems: 'center',
+    backgroundColor: '#DDD',
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingLeft: 15,
+  },
+  backRightBtn: {
+    alignItems: 'center',
+    bottom: 0,
+    justifyContent: 'center',
+    position: 'absolute',
+    top: 0,
+    width: 75,
+  },
+  backRightBtnRight: {
+    backgroundColor: 'red',
+    right: 0,
+  },
+  backRightBtnLeft: {
+    backgroundColor: 'green',
+    right: 75,
+  },
+  backTextWhite: {
+    color: '#FFF',
   },
 });
 

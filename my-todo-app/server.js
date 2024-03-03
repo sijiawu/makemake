@@ -84,29 +84,83 @@ app.delete('/tasks/:id', async (req, res) => {
 
 app.post('/tasks/:id/breakdown', async (req, res) => {
   try {
+    console.log(req.params.id)
     const task = await Task.findById(req.params.id);
     if (!task) {
+      // If the task is not found, send a 404 response and exit the function
       return res.status(404).send({ message: "Task not found." });
     }
+
+    // Assuming this is an async operation that might fail
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // Adjust according to the latest available model
+      model: "gpt-3.5-turbo",
       messages: [{ role: 'user', content: breakdownPrompt(task.title, task.description) }],
     }).catch(err => {
       console.error("OpenAI API error:", err);
-      throw new Error("Failed to generate subtasks due to an OpenAI API error.");
+      // Properly exit the function after sending a response on error
+      res.status(500).send({ message: "Failed to generate subtasks due to an OpenAI API error." });
+      return; // Ensure no further execution
     });
-
-    // Proceed with parsing the response and other logic...
+    console.log(response)
+    // Proceed with logic assuming success...
+    // Make sure this part does not execute if the catch block above sends a response
     const subtasks = parseOpenAIResponse(response);
+    // Send a successful response only if the above operations complete without entering the catch block
     res.status(200).send({ message: subtasks });
-
-    if (subtasks.length === 0) {
-      return res.status(400).send({ message: "No valid subtasks generated." });
-    }
-
   } catch (error) {
     console.error(error);
+    // A catch-all error handler should be the last resort for sending error responses
     res.status(500).send({ message: error.message || "An error occurred." });
+  }
+});
+
+
+app.post('/tasks/:id/saveSubtasks', async (req, res) => {
+  const { id } = req.params;
+  const { subtasks } = req.body;
+
+  try {
+    // Optional: Find and mark the original task as 'broken down'
+    const originalTask = await Task.findById(id);
+    if (!originalTask) {
+      return res.status(404).send({ message: 'Original task not found.' });
+    }
+    originalTask.brokenDown = true;
+    await originalTask.save();
+
+    // Create and save each subtask as a new task
+    const savedSubtasks = await Promise.all(subtasks.map(async (subtask) => {
+      const newTask = new Task({
+        ...subtask,
+        // Set additional properties as needed, e.g., marking them as not completed
+        completed: false,
+        brokenDown: false,
+        masterTaskId: id,
+        note: `Created from this big task: ${originalTask.title}`,
+      });
+      return await newTask.save();
+    }));
+
+    res.status(201).send(savedSubtasks);
+  } catch (error) {
+    console.error('Failed to save subtasks:', error);
+    res.status(500).send({ message: 'Failed to save subtasks.' });
+  }
+});
+
+app.get('/tasks/subtasks/:taskId', async (req, res) => {
+  try {
+    const masterTaskId = req.params.taskId;
+    const subtasks = await Task.find({ masterTaskId: masterTaskId });
+
+    if (subtasks.length === 0) {
+      return res.status(404).send({ message: 'No subtasks found for this task.' });
+    }
+
+    res.status(200).json(subtasks);
+  } catch (error) {
+    console.error('Failed to get subtasks:', error);
+    res.status(500).send({ message: 'Error fetching subtasks' });
   }
 });
 

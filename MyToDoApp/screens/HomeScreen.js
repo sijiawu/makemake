@@ -4,7 +4,7 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Task Manager</Text>
+      <Text style={styles.title}>Makemake</Text>
       
       <Button
         title="View All Tasks"

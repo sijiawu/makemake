@@ -7,7 +7,7 @@ const taskSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: true, // Making description a required field
+    required: false,
   },
   reluctanceScore: {
     type: Number,
@@ -24,7 +24,16 @@ const taskSchema = new mongoose.Schema({
   note: {
     type: String,
     default: '', // Optional note, e.g., "Created from task - [Original Task Title]"
-  }
+  },
+  brokenDown: {
+    type: Boolean, 
+    default: false 
+  },
+  masterTaskId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task',
+    required: false
+  },
 });
 
 // Compiling the schema into a model
