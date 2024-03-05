@@ -66,28 +66,41 @@ const BreakdownScreen = ({ route }) => {
     <ScrollView contentContainerStyle={styles.container}>
       {subtasks.map((subtask, index) => (
         <View key={index} style={styles.subtaskContainer}>
-          <TextInput
-            style={styles.input}
-            value={subtask.title}
-            onChangeText={(text) => {
-              const newSubtasks = [...subtasks];
-              newSubtasks[index].title = text;
-              setSubtasks(newSubtasks);
-            }}
-          />
+          <View style={styles.subtaskInputContainer}>
+            <TextInput
+              style={styles.input}
+              value={subtask.title}
+              onChangeText={(text) => {
+                const newSubtasks = [...subtasks];
+                newSubtasks[index].title = text;
+                setSubtasks(newSubtasks);
+              }}
+              multiline
+              placeholder="Subtask title"
+            />
+          </View>
           <View style={styles.scoreAdjustmentContainer}>
-            <TouchableOpacity onPress={() => adjustScore(subtask.id, -1)} disabled={subtask.reluctanceScore <= 1}>
+            <TouchableOpacity 
+              onPress={() => adjustScore(subtask.id, -1)} 
+              disabled={subtask.reluctanceScore <= 1}
+              style={styles.arrowButton}
+            >
               <Text style={[styles.arrow, subtask.reluctanceScore <= 1 && styles.disabledArrow]}>-</Text>
             </TouchableOpacity>
-            <Text>{subtask.reluctanceScore}</Text>
-            <TouchableOpacity onPress={() => adjustScore(subtask.id, 1)} disabled={subtask.reluctanceScore >= 5}>
+            <Text style={styles.score}>{subtask.reluctanceScore}</Text>
+            <TouchableOpacity 
+              onPress={() => adjustScore(subtask.id, 1)} 
+              disabled={subtask.reluctanceScore >= 5}
+              style={styles.arrowButton}
+            >
               <Text style={[styles.arrow, subtask.reluctanceScore >= 5 && styles.disabledArrow]}>+</Text>
             </TouchableOpacity>
           </View>
-          <Button title="X" onPress={() => deleteSubtask(subtask.id)} color="red" />
+          <TouchableOpacity onPress={() => deleteSubtask(subtask.id)} style={styles.deleteButton}>
+            <Text style={styles.deleteButtonText}>X</Text>
+          </TouchableOpacity>
         </View>
       ))}
-      {/* Add the Save button here */}
       <View style={styles.saveButtonContainer}>
         <Button
           title="Save Subtasks"
@@ -101,37 +114,48 @@ const BreakdownScreen = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  container: {
-    padding: 20,
-  },
   subtaskContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start', // Align items to the start to accommodate for varying TextInput heights
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 10,
+  },
+  subtaskInputContainer: {
+    flex: 1, // Allows the text input to grow and fill available space
+    borderColor: 'grey',
   },
   input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: 'gray',
-    padding: 10,
-    marginRight: 10,
+    minHeight: 40, // Minimum height to start with
+    textAlignVertical: 'top', // Align text to the top for Android
   },
   scoreAdjustmentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 10,
+    marginLeft: 10, // Add some space between the text input and score adjustment
+  },
+  arrowButton: {
+    padding: 5, // Easy to tap
+    marginLeft: 5, // Space out the arrows a bit
+    marginRight: 5,
   },
   arrow: {
-    padding: 5,
     fontSize: 20,
   },
   disabledArrow: {
     color: 'gray',
+  },
+  score: {
+    minWidth: 20, // Ensure score text doesn't get squished
+    textAlign: 'center', // Center the score number
+  },
+  deleteButton: {
+    padding: 5,
+    marginLeft: 10, // Space it out from the score adjustment
+  },
+  deleteButtonText: {
+    color: 'black',
   },
   saveButtonContainer: {
     marginTop: 20,
