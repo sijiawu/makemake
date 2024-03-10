@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>MyToDoApp</string>
+	<string>MakeMake</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -48,5 +48,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+  <string>We need access to your microphone for voice input</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We will convert voice input to tasks</string>
 </dict>
 </plist>

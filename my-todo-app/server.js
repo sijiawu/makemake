@@ -7,7 +7,7 @@ const port = 3000;
 
 // Model import
 const Task = require('./models/Task'); // Ensure this path matches your project structure
-const { breakdownPrompt } = require('./prompts');
+const { breakdownPrompt, inputPrompt } = require('./prompts');
 
 app.use(express.json()); // Middleware to parse JSON bodies
 
@@ -121,7 +121,7 @@ app.post('/tasks/:id/breakdown', async (req, res) => {
       res.status(500).send({ message: "Failed to generate subtasks due to an OpenAI API error." });
       return; // Ensure no further execution
     });
-    console.log(response)
+    console.log(response.choices[0].message.content)
     // Proceed with logic assuming success...
     // Make sure this part does not execute if the catch block above sends a response
     const subtasks = parseOpenAIResponse(response);
@@ -167,6 +167,29 @@ app.post('/tasks/:id/saveSubtasks', async (req, res) => {
   }
 });
 
+//very similar to method above. Please refactor/combine!
+app.post('/tasks/saveTasks', async (req, res) => {
+  console.log("HERE WITH tasks!!!")
+
+  const { tasks } = req.body;
+  try {
+    // Create and save each task as a new task
+    const savedTasks = await Promise.all(tasks.map(async (task) => {
+      const newTask = new Task({
+        ...task,
+        completed: false,
+        brokenDown: false,
+      });
+      return await newTask.save();
+    }));
+
+    res.status(201).send(savedTasks);
+  } catch (error) {
+    console.error('Failed to save tasks:', error);
+    res.status(500).send({ message: 'Failed to save tasks.' });
+  }
+});
+
 app.get('/tasks/subtasks/:taskId', async (req, res) => {
   try {
     const masterTaskId = req.params.taskId;
@@ -181,6 +204,31 @@ app.get('/tasks/subtasks/:taskId', async (req, res) => {
   } catch (error) {
     console.error('Failed to get subtasks:', error);
     res.status(500).send({ message: 'Error fetching subtasks' });
+  }
+});
+
+app.post('/voice/tasks', async (req, res) => {
+  const { text } = req.body; // Transcribed text from voice input
+  console.log("Got some good stuff: ", text)
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: 'user', content: inputPrompt(text) }],
+    }).catch(err => {
+      console.error("OpenAI API error:", err);
+      // Properly exit the function after sending a response on error
+      res.status(500).send({ message: "Failed to generate tasks due to an OpenAI API error." });
+      return; // Ensure no further execution
+    });
+    console.log("Extracting tasks from voice input: ", response.choices[0].message.content)
+    const tasks = parseOpenAIResponse(response);
+
+    res.status(200).send({ message: tasks });
+  } catch (error) {
+    console.error(error);
+    // A catch-all error handler should be the last resort for sending error responses
+    res.status(500).send({ message: error.message || "An error occurred." });
   }
 });
 
