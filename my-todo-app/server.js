@@ -107,29 +107,23 @@ app.post('/tasks/:id/breakdown', async (req, res) => {
     console.log(req.params.id)
     const task = await Task.findById(req.params.id);
     if (!task) {
-      // If the task is not found, send a 404 response and exit the function
       return res.status(404).send({ message: "Task not found." });
     }
 
-    // Assuming this is an async operation that might fail
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: 'user', content: breakdownPrompt(task.title, task.description) }],
     }).catch(err => {
       console.error("OpenAI API error:", err);
-      // Properly exit the function after sending a response on error
       res.status(500).send({ message: "Failed to generate subtasks due to an OpenAI API error." });
       return; // Ensure no further execution
     });
     console.log(response.choices[0].message.content)
-    // Proceed with logic assuming success...
-    // Make sure this part does not execute if the catch block above sends a response
     const subtasks = parseOpenAIResponse(response);
     // Send a successful response only if the above operations complete without entering the catch block
     res.status(200).send({ message: subtasks });
   } catch (error) {
     console.error(error);
-    // A catch-all error handler should be the last resort for sending error responses
     res.status(500).send({ message: error.message || "An error occurred." });
   }
 });
@@ -233,27 +227,16 @@ app.post('/voice/tasks', async (req, res) => {
 });
 
 function parseOpenAIResponse(responseJson) {
-  // Extracting the content field from the response
   const content = responseJson.choices[0].message.content;
 
-  // Splitting the content into lines, each representing a subtask
+  // Splitting the content by new lines to get each subtask
   const lines = content.trim().split('\n');
 
-  // Parsing each line to extract the subtask title and reluctance score
+  // Mapping each line to a subtask object
   const subtasks = lines.map(line => {
-    // Using a regular expression to extract the title and score
-    const match = line.match(/^(.*?) - (\d+)$/);
-
-    if (match) {
-      const [, title, scoreStr] = match;
-      const score = parseInt(scoreStr, 10); // Converting score to an integer
-      return { title, reluctanceScore: score };
-    }
-
-    // Returning null for lines that don't match the expected format
-    // These will be filtered out in the next step
-    return null;
-  }).filter(subtask => subtask !== null); // Removing any null entries
+    // Directly returning the title with a default reluctance score of 1
+    return { title: line, reluctanceScore: 1 };
+  }).filter(subtask => subtask.title.trim() !== ''); // Ensuring no empty titles
 
   return subtasks;
 }

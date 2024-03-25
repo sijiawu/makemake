@@ -16,6 +16,7 @@ const BreakdownScreen = ({ route }) => {
         // Replace with your actual fetch logic
         const response = await axios.post(`/tasks/${task._id}/breakdown`);
         const data = response.data; // With axios, the JSON response is automatically parsed
+        console.log("$$$$$$ Fetching breakdown", data.message)
 
         setSubtasks(data.message.map((item, index) => ({ ...item, id: index })));
       } catch (error) {
