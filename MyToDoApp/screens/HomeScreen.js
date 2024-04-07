@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Voice from '@react-native-voice/voice';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import axios from '../axiosConfig'; // Adjust this path to your axios config file
-
 
 const HomeScreen = ({ navigation }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -53,34 +50,28 @@ const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Makemake</Text>
-      
-      <Button
-        title="View All Tasks"
-        onPress={() => navigation.navigate('All Tasks')}
-      />
-      
-      <Button
-        title="Tackle A Task"
-        onPress={() => navigation.navigate('Tackle A Task')}
-      />
-      
-      <Button
-        title="View Completed Tasks"
-        onPress={() => navigation.navigate('CompletedTasks')}
-      />
 
-      <Button
-        title="Start Recording"
-        onPress={startRecording}
-        color="green"
-        disabled={isRecording}
-      />
-      <Button
-        title="Stop Recording"
-        onPress={stopRecording}
-        color="red"
-        disabled={!isRecording}
-      />
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('All Tasks')}>
+        <Text style={styles.buttonText}>View All Tasks</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Tackle A Task')}>
+        <Text style={styles.buttonText}>Tackle A Task</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('CompletedTasks')}>
+        <Text style={styles.buttonText}>View Completed Tasks</Text>
+      </TouchableOpacity>
+
+      {isRecording ? (
+        <TouchableOpacity style={[styles.recordButton, styles.stopButton]} onPress={stopRecording}>
+          <Text style={styles.recordButtonText}>Stop Recording</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={[styles.recordButton, styles.startButton]} onPress={startRecording}>
+          <Text style={styles.recordButtonText}>Start Recording</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -91,16 +82,42 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#F5F5F5',
   },
   title: {
-    fontSize: 24,
-    marginBottom: 20,
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 40,
   },
-  buttonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
+  button: {
+    backgroundColor: '#007BFF',
+    padding: 15,
+    borderRadius: 15,
+    width: '80%',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  recordButton: {
     marginTop: 20,
+    padding: 15,
+    borderRadius: 15,
+    width: '60%',
+    alignItems: 'center',
+  },
+  startButton: {
+    backgroundColor: 'green',
+  },
+  stopButton: {
+    backgroundColor: 'red',
+  },
+  recordButtonText: {
+    color: 'white',
+    fontSize: 18,
   },
 });
 

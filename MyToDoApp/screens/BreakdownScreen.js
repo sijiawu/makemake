@@ -7,20 +7,14 @@ const BreakdownScreen = ({ route }) => {
   const { task } = route.params;
   const [subtasks, setSubtasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const navigation = useNavigation();
 
   useEffect(() => {
     const fetchBreakdown = async () => {
       try {
-        // Replace with your actual fetch logic
         const response = await axios.post(`/tasks/${task._id}/breakdown`);
-        const data = response.data; // With axios, the JSON response is automatically parsed
-        console.log("$$$$$$ Fetching breakdown", data.message)
-
-        setSubtasks(data.message.map((item, index) => ({ ...item, id: index })));
+        setSubtasks(response.data.message.map((item, index) => ({ ...item, id: index })));
       } catch (error) {
-        console.error("Failed to fetch breakdown:", error);
         Alert.alert("Error", "Failed to fetch breakdown");
       } finally {
         setLoading(false);
@@ -37,7 +31,7 @@ const BreakdownScreen = ({ route }) => {
   const adjustScore = (id, adjustment) => {
     setSubtasks(subtasks.map(subtask => {
       if (subtask.id === id) {
-        const newScore = subtask.reluctanceScore + adjustment;
+        const newScore = Math.max(1, Math.min(subtask.reluctanceScore + adjustment, 5));
         return { ...subtask, reluctanceScore: newScore };
       }
       return subtask;
@@ -46,16 +40,11 @@ const BreakdownScreen = ({ route }) => {
 
   const saveSubtasks = async () => {
     try {
-      setIsSaving(true); // If you're using a loading state
-      console.log("$$$$$$$$$ Saving subtasks! ", subtasks)
       await axios.post(`/tasks/${task._id}/saveSubtasks`, { subtasks });
       Alert.alert("Success", "Subtasks saved successfully");
       navigation.navigate('Details', { task: task, refresh: true });
     } catch (error) {
-      console.error("Failed to save subtasks:", error);
       Alert.alert("Error", "Failed to save subtasks");
-    } finally {
-      setIsSaving(false); // If you're using a loading state
     }
   };
 
@@ -67,33 +56,19 @@ const BreakdownScreen = ({ route }) => {
     <ScrollView contentContainerStyle={styles.container}>
       {subtasks.map((subtask, index) => (
         <View key={index} style={styles.subtaskContainer}>
-          <View style={styles.subtaskInputContainer}>
-            <TextInput
-              style={styles.input}
-              value={subtask.title}
-              onChangeText={(text) => {
-                const newSubtasks = [...subtasks];
-                newSubtasks[index].title = text;
-                setSubtasks(newSubtasks);
-              }}
-              multiline
-              placeholder="Subtask title"
-            />
-          </View>
+          <TextInput
+            style={styles.input}
+            value={subtask.title}
+            onChangeText={(text) => setSubtasks(subtasks.map((item, i) => i === index ? { ...item, title: text } : item))}
+            multiline
+            placeholder="Subtask title"
+          />
           <View style={styles.scoreAdjustmentContainer}>
-            <TouchableOpacity 
-              onPress={() => adjustScore(subtask.id, -1)} 
-              disabled={subtask.reluctanceScore <= 1}
-              style={styles.arrowButton}
-            >
+            <TouchableOpacity onPress={() => adjustScore(index, -1)} disabled={subtask.reluctanceScore <= 1}>
               <Text style={[styles.arrow, subtask.reluctanceScore <= 1 && styles.disabledArrow]}>-</Text>
             </TouchableOpacity>
             <Text style={styles.score}>{subtask.reluctanceScore}</Text>
-            <TouchableOpacity 
-              onPress={() => adjustScore(subtask.id, 1)} 
-              disabled={subtask.reluctanceScore >= 5}
-              style={styles.arrowButton}
-            >
+            <TouchableOpacity onPress={() => adjustScore(index, 1)} disabled={subtask.reluctanceScore >= 5}>
               <Text style={[styles.arrow, subtask.reluctanceScore >= 5 && styles.disabledArrow]}>+</Text>
             </TouchableOpacity>
           </View>
@@ -102,65 +77,74 @@ const BreakdownScreen = ({ route }) => {
           </TouchableOpacity>
         </View>
       ))}
-      <View style={styles.saveButtonContainer}>
-        <Button
-          title="Save Subtasks"
-          onPress={() => saveSubtasks()} // Make sure you have implemented this function
-          color="#007AFF" // You can customize the button color as needed
-        />
-        <Button title="Cancel" onPress={() => navigation.goBack()} />
+      <View style={styles.buttonContainer}>
+        <Button title="Save Subtasks" onPress={saveSubtasks} color="#007AFF" />
+        <Button title="Cancel" onPress={() => navigation.goBack()} color="#6c757d" />
       </View>
     </ScrollView>
-  );  
+  );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    padding: 10,
+    backgroundColor: '#f2f2f2',
+  },
   subtaskContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start', // Align items to the start to accommodate for varying TextInput heights
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-  },
-  subtaskInputContainer: {
-    flex: 1, // Allows the text input to grow and fill available space
-    borderColor: 'grey',
+    alignItems: 'center',
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 7,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   input: {
-    minHeight: 40, // Minimum height to start with
-    textAlignVertical: 'top', // Align text to the top for Android
+    flex: 1,
+    marginRight: 10,
+    backgroundColor: '#e9ecef',
+    borderRadius: 5,
+    paddingHorizontal: 5,
+    minHeight: 40,
   },
   scoreAdjustmentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 10, // Add some space between the text input and score adjustment
   },
   arrowButton: {
-    padding: 5, // Easy to tap
-    marginLeft: 5, // Space out the arrows a bit
-    marginRight: 5,
+    padding: 5,
   },
   arrow: {
     fontSize: 20,
   },
   disabledArrow: {
-    color: 'gray',
+    color: '#6c757d',
   },
   score: {
-    minWidth: 20, // Ensure score text doesn't get squished
-    textAlign: 'center', // Center the score number
+    paddingHorizontal: 10,
   },
   deleteButton: {
+    backgroundColor: 'red',
+    borderRadius: 5,
     padding: 5,
-    marginLeft: 10, // Space it out from the score adjustment
+    marginLeft: 5,
   },
   deleteButtonText: {
-    color: 'black',
+    color: '#fff',
   },
-  saveButtonContainer: {
-    marginTop: 20,
-    marginBottom: 20, // Add some space at the bottom if needed
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 20,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

@@ -129,9 +129,12 @@ const DetailsScreen = ({ route, navigation }) => {
         </>
       ) : (
         <>
-          <Text style={styles.detailText}>Title: {title}</Text>
-          <Text style={styles.detailText}>Description: {description}</Text>
-          <Text style={styles.detailText}>Reluctance Score: {reluctanceScore}</Text>
+          <View style={styles.taskContainer}>
+            <Text style={styles.taskTitle}>{task.title}</Text>
+            <Text style={styles.taskDetail}>Description: {task.description}</Text>
+            {task.note && <Text style={styles.taskDetail}>Note: {task.note}</Text>}
+            <Text style={styles.taskDetail}>Reluctance Score: {task.reluctanceScore}</Text>
+          </View>
           {!isBrokenDown && (
             <View style={styles.actionContainer}>
               <TouchableOpacity style={styles.actionButton} onPress={() => setIsEditMode(true)}>
@@ -143,12 +146,11 @@ const DetailsScreen = ({ route, navigation }) => {
               <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Breakdown', { task: task })}>
                 <Text style={styles.buttonText}>Break it down!</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.checkmarkButton} onPress={() => markTaskAsCompleted(task._id)}>
-                <Text style={styles.checkmarkButtonText}>✔️ Complete Task</Text>
-              </TouchableOpacity>
-              {/* Button to generate Google Calendar event */}
               <TouchableOpacity style={styles.actionButton} onPress={generateGoogleCalendarLink}>
                 <Text style={styles.buttonText}>Generate Google Calendar Event</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.checkmarkButton} onPress={() => markTaskAsCompleted(task._id)}>
+                <Text style={styles.checkmarkButtonText}>✔️ Complete Task</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -166,9 +168,9 @@ const DetailsScreen = ({ route, navigation }) => {
                 onPress={() => navigation.navigate('Details', { task: item })}
               >
                 <Text style={styles.taskTitle}>{item.title}</Text>
-                <Text>Description: {item.description}</Text>
-                {item.note ? <Text>Note: {item.note}</Text> : null}
-                <Text>Completed: {item.completed ? 'Yes' : 'No'}</Text>
+                <Text style={styles.taskDetail}>Description: {item.description}</Text>
+                {item.note && <Text style={styles.taskDetail}>Note: {item.note}</Text>}
+                <Text style={styles.taskDetail}>Reluctance Score: {item.reluctanceScore}</Text>
               </TouchableOpacity>
             )}
             renderHiddenItem={(data, rowMap) => (
@@ -183,7 +185,7 @@ const DetailsScreen = ({ route, navigation }) => {
                   style={[styles.backRightBtn, styles.backRightBtnLeft]}
                   onPress={() => markTaskAsCompleted(data.item._id)}
                 >
-                  <Text style={styles.backTextWhite}>This is done!</Text>
+                  <Text style={styles.backTextWhite}>Done!</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -200,50 +202,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f2f2f2', // Light gray background to soften the overall look
     padding: 10,
-  },
-  subtaskItem: {
-    marginTop: 10,
-    // Add styles for subtask items
-  },
-  subtaskTitle: {
-    // Add styles for subtask titles
-  },
-  // Add more styles as needed
-  taskItem: {
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
-    padding: 20,
-  },
-  taskTitle: {
-    fontWeight: 'bold',
-  },
-  rowBack: {
-    alignItems: 'center',
-    backgroundColor: '#DDD',
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingLeft: 15,
-  },
-  backRightBtn: {
-    alignItems: 'center',
-    bottom: 0,
-    justifyContent: 'center',
-    position: 'absolute',
-    top: 0,
-    width: 75,
-  },
-  backRightBtnRight: {
-    backgroundColor: 'red',
-    right: 0,
-  },
-  backRightBtnLeft: {
-    backgroundColor: 'green',
-    right: 75,
-  },
-  backTextWhite: {
-    color: '#FFF',
   },
   input: {
     borderWidth: 1,
@@ -309,8 +267,20 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 16,
-    marginBottom: 15,
-    color: '#4f4f4f', // Slightly lighter grey for the text
+    marginBottom: 10,
+    color: '#333', // Darker text for better readability
+    lineHeight: 24, // Increase line height for better readability
+  },
+  taskContainer: {
+    backgroundColor: '#ffffff',
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonGroup: {
     marginTop: 30,
@@ -335,6 +305,57 @@ const styles = StyleSheet.create({
     color: '#007bff',
     marginVertical: 20,
     textAlign: 'center', // Center this tag visually in the screen
+  },
+  taskItem: {
+    backgroundColor: '#ffffff', // White background for task items
+    padding: 20,
+    borderRadius: 10, // Rounded corners
+    marginVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  taskTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginBottom: 5,
+  },
+  taskDetail: {
+    fontSize: 14,
+    color: '#666666', // A softer color for details
+    marginBottom: 5,
+  },
+  rowBack: {
+    alignItems: 'center',
+    backgroundColor: '#DDD',
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end', // Adjust if necessary to ensure visibility
+    marginVertical: 5,
+    borderRadius: 10, // Matching the front item's border radius
+    overflow: 'hidden', // Ensures the background doesn't spill outside the border radius
+    height: '100%', // Make sure it covers the height
+  },
+  backRightBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 75,
+  },
+  backRightBtnRight: {
+    backgroundColor: 'red',
+    right: 75, // Adjust based on your design. This should be the position of the second button.
+  },
+  backRightBtnLeft: {
+    backgroundColor: 'green',
+    right: 0, // This is for the delete button, ensuring it's visible
+  },  
+  backTextWhite: {
+    color: '#FFF',
   },
 });
 

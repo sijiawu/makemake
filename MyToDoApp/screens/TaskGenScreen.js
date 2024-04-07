@@ -67,19 +67,17 @@ const TaskGenScreen = ({ route }) => {
     <ScrollView contentContainerStyle={styles.container}>
       {tasks.map((task, index) => (
         <View key={index} style={styles.taskContainer}>
-          <View style={styles.taskInputContainer}>
-            <TextInput
-              style={styles.input}
-              value={task.title}
-              onChangeText={(text) => {
-                const newTasks = [...tasks];
-                newTasks[index].title = text;
-                setTasks(newTasks);
-              }}
-              multiline
-              placeholder="Task title"
-            />
-          </View>
+          <TextInput
+            style={styles.input}
+            value={task.title}
+            onChangeText={(text) => {
+              const newTasks = [...tasks];
+              newTasks[index].title = text;
+              setTasks(newTasks);
+            }}
+            multiline
+            placeholder="Task title"
+          />
           <View style={styles.scoreAdjustmentContainer}>
             <TouchableOpacity 
               onPress={() => adjustScore(task.id, -1)} 
@@ -115,52 +113,64 @@ const TaskGenScreen = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    padding: 10,
+    backgroundColor: '#f2f2f2',
+  },
   taskContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start', // Align items to the start to accommodate for varying TextInput heights
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
+    alignItems: 'center',
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 7,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   taskInputContainer: {
     flex: 1, // Allows the text input to grow and fill available space
     borderColor: 'grey',
   },
   input: {
-    minHeight: 40, // Minimum height to start with
-    textAlignVertical: 'top', // Align text to the top for Android
+    flex: 1,
+    marginRight: 10,
+    backgroundColor: '#e9ecef',
+    borderRadius: 5,
+    paddingHorizontal: 5,
+    minHeight: 40,
   },
   scoreAdjustmentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 10, // Add some space between the text input and score adjustment
   },
   arrowButton: {
-    padding: 5, // Easy to tap
-    marginLeft: 5, // Space out the arrows a bit
-    marginRight: 5,
+    padding: 5,
   },
   arrow: {
     fontSize: 20,
   },
   disabledArrow: {
-    color: 'gray',
+    color: '#6c757d',
   },
   score: {
-    minWidth: 20, // Ensure score text doesn't get squished
-    textAlign: 'center', // Center the score number
+    paddingHorizontal: 10,
   },
   deleteButton: {
+    backgroundColor: 'red',
+    borderRadius: 5,
     padding: 5,
-    marginLeft: 10, // Space it out from the score adjustment
+    marginLeft: 5,
   },
   deleteButtonText: {
-    color: 'black',
+    color: '#fff',
   },
   saveButtonContainer: {
-    marginTop: 20,
-    marginBottom: 20, // Add some space at the bottom if needed
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 20,
   },
 });
 
