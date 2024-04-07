@@ -55,7 +55,7 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.buttonText}>View All Tasks</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Tackle A Task')}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Tackle Task')}>
         <Text style={styles.buttonText}>Tackle A Task</Text>
       </TouchableOpacity>
 

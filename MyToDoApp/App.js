@@ -23,7 +23,7 @@ function App() {
         <Stack.Screen name="Breakdown" component={BreakdownScreen} />
         <Stack.Screen name="TaskGen" component={TaskGenScreen} />
         <Stack.Screen name="CompletedTasks" component={CompletedTasksScreen} />
-        <Stack.Screen name="TackleTask" component={TackleTaskScreen} />
+        <Stack.Screen name="Tackle Task" component={TackleTaskScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

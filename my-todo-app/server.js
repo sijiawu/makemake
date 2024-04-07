@@ -63,6 +63,39 @@ app.get('/tasks/completed', async (req, res) => {
   }
 });
 
+app.get('/tasks/random', async (req, res) => {
+  console.log("HERE: ", req.query)
+  const energyLevel = req.query.energyLevel;
+  let scoreRange;
+  switch (energyLevel) {
+    case 'low':
+      scoreRange = { $lte: 2 }; // Low energy: score 1 or 2
+      break;
+    case 'medium':
+      scoreRange = { $gte: 3, $lte: 4 }; // Medium energy: score 3 or 4
+      break;
+    case 'high':
+      scoreRange = { $eq: 5 }; // High energy: score 5
+      break;
+    default:
+      return res.status(400).send({ message: "Invalid energy level." });
+  }
+
+  try {
+    const tasks = await Task.find({ reluctanceScore: scoreRange, completed: false }).exec();
+    if (tasks.length > 0) {
+      // Randomly select a task
+      const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
+      res.send(randomTask);
+    } else {
+      res.send(null);
+    }
+  } catch (error) {
+    console.error("Failed to fetch tasks:", error);
+    res.status(500).send({ message: "An error occurred while fetching tasks." });
+  }
+});
+
 // Get a single task by id
 app.get('/tasks/:id', async (req, res) => {
   try {
