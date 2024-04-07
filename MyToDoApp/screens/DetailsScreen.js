@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, FlatList, Text, TextInput, Button, ScrollView, Alert, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, FlatList, Text, TextInput, Button, ScrollView, Alert, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from '../axiosConfig'; // Make sure the path is correct based on your project structure
@@ -9,10 +9,32 @@ const DetailsScreen = ({ route, navigation }) => {
   const [taskDetails, setTaskDetails] = useState(null);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
+  const [reluctanceScore, setReluctanceScore] = useState(task.reluctanceScore);
   const [subtasks, setSubtasks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isBrokenDown, setIsBrokenDown] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  const adjustScore = (adjustment) => {
+    const newScore = Math.max(1, Math.min(reluctanceScore + adjustment, 5)); // Ensure score is between 1 and 5
+    setReluctanceScore(newScore);
+  };
+
+  const generateGoogleCalendarLink = () => {
+    const baseURL = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+    const text = `&text=${encodeURIComponent(title)}`;
+    const details = `&details=${encodeURIComponent(description)}`;
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour later
+    const formatDateTime = (date) => {
+      const pad = (num) => (num < 10 ? '0' + num : num);
+      return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+    };
+  
+    const dates = `&dates=${formatDateTime(startDate)}/${formatDateTime(endDate)}`;
+    const link = `${baseURL}${text}${details}${dates}`;
+    Linking.openURL(link).catch(err => console.error('Error opening Google Calendar link', err));
+  };
 
   const saveEdits = async () => {
     try {
@@ -29,7 +51,7 @@ const DetailsScreen = ({ route, navigation }) => {
     try {
       await axios.delete(`/tasks/${task._id}`);
       Alert.alert("Success", "Task deleted successfully");
-      navigation.goBack(); // Or navigate to an appropriate screen
+      navigation.navigate('Home')
     } catch (error) {
       console.error("Failed to delete task:", error);
       Alert.alert("Error", "Failed to delete task");
@@ -90,29 +112,45 @@ const DetailsScreen = ({ route, navigation }) => {
     <View style={styles.container}>
       {isEditMode ? (
         <>
-          <TextInput style={styles.input} value={title} onChangeText={setTitle} />
-          <TextInput style={styles.input} value={description} multiline onChangeText={setDescription} />
+          <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Task Title" />
+          <TextInput style={styles.input} value={description} multiline onChangeText={setDescription} placeholder="Description" />
+          {/* Display and adjust reluctance score in edit mode */}
+          <View style={styles.scoreAdjustmentContainer}>
+            <TouchableOpacity onPress={() => adjustScore(-1)} style={styles.scoreButton}>
+              <Text style={styles.scoreButtonText}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.score}>{reluctanceScore}</Text>
+            <TouchableOpacity onPress={() => adjustScore(1)} style={styles.scoreButton}>
+              <Text style={styles.scoreButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
           <Button title="Save Edits" onPress={saveEdits} />
           <Button title="Cancel" onPress={() => setIsEditMode(false)} />
         </>
       ) : (
         <>
-          <Text>Title: {title}</Text>
-          <Text>Description: {description}</Text>
+          <Text style={styles.detailText}>Title: {title}</Text>
+          <Text style={styles.detailText}>Description: {description}</Text>
+          <Text style={styles.detailText}>Reluctance Score: {reluctanceScore}</Text>
           {!isBrokenDown && (
-            <>
-              <Button title="Edit" onPress={() => setIsEditMode(true)} />
-              <Button title="Delete" onPress={deleteTask} />
-              <Button
-                title="Break it down!"
-                onPress={() => navigation.navigate('Breakdown', { task: task })} />
-              <TouchableOpacity
-                style={styles.checkmarkButton}
-                onPress={() => markTaskAsCompleted(task._id)}
-              >
-                <Text>✔️</Text>
+            <View style={styles.actionContainer}>
+              <TouchableOpacity style={styles.actionButton} onPress={() => setIsEditMode(true)}>
+                <Text style={styles.buttonText}>Edit</Text>
               </TouchableOpacity>
-              </>
+              <TouchableOpacity style={styles.actionButton} onPress={deleteTask}>
+                <Text style={styles.buttonText}>Delete</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Breakdown', { task: task })}>
+                <Text style={styles.buttonText}>Break it down!</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.checkmarkButton} onPress={() => markTaskAsCompleted(task._id)}>
+                <Text style={styles.checkmarkButtonText}>✔️ Complete Task</Text>
+              </TouchableOpacity>
+              {/* Button to generate Google Calendar event */}
+              <TouchableOpacity style={styles.actionButton} onPress={generateGoogleCalendarLink}>
+                <Text style={styles.buttonText}>Generate Google Calendar Event</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </>
       )}
@@ -160,20 +198,8 @@ const DetailsScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f2f2f2', // Light gray background to soften the overall look
     padding: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-    marginBottom: 10,
-  },
-  checkmarkButton: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: '#DDDDDD',
-    alignItems: 'center',
-    borderRadius: 5,
   },
   subtaskItem: {
     marginTop: 10,
@@ -183,12 +209,6 @@ const styles = StyleSheet.create({
     // Add styles for subtask titles
   },
   // Add more styles as needed
-  brokenDownTag: {
-    fontSize: 16,
-    color: '#007AFF',
-    marginBottom: 10,
-    fontWeight: 'bold',
-  },  
   taskItem: {
     backgroundColor: '#FFF',
     borderBottomWidth: 1,
@@ -224,6 +244,97 @@ const styles = StyleSheet.create({
   },
   backTextWhite: {
     color: '#FFF',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#cccccc',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+    fontSize: 16,
+    backgroundColor: '#ffffff', // White background for the text inputs
+  },
+  textArea: {
+    minHeight: 120, // Provide ample space for description input
+    textAlignVertical: 'top', // Align text to the top for multiline input
+  },
+  scoreAdjustmentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    paddingHorizontal: 40, // Space out the score adjustment buttons
+  },
+  scoreButton: {
+    backgroundColor: '#007bff',
+    borderRadius: 50, // Circular buttons
+    width: 45,
+    height: 45,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scoreButtonText: {
+    color: '#ffffff',
+    fontSize: 24, // Larger font size for clarity
+  },
+  score: {
+    fontSize: 20,
+    width: 60, // Ensure the score text box does not get squished
+    textAlign: 'center',
+  },
+  actionButton: {
+    backgroundColor: '#007bff',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginVertical: 5,
+    elevation: 2, // Shadow effect for Android
+    shadowOffset: { width: 1, height: 1 }, // Shadow settings for iOS
+    shadowColor: "#000",
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  detailLabel: {
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 5,
+    fontSize: 18,
+    color: '#333', // Dark grey for contrast
+  },
+  detailText: {
+    fontSize: 16,
+    marginBottom: 15,
+    color: '#4f4f4f', // Slightly lighter grey for the text
+  },
+  buttonGroup: {
+    marginTop: 30,
+  },
+  checkmarkButton: {
+    backgroundColor: '#28a745', // Green for the "Complete" action
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 5,
+  },
+  checkmarkButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  brokenDownTag: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#007bff',
+    marginVertical: 20,
+    textAlign: 'center', // Center this tag visually in the screen
   },
 });
 

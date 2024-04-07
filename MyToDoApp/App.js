@@ -7,6 +7,7 @@ import AllTasksScreen from './screens/AllTasksScreen';
 import BreakdownScreen from './screens/BreakdownScreen';
 import CompletedTasksScreen from './screens/CompletedTasksScreen';
 import TaskGenScreen from './screens/TaskGenScreen';
+import TackleTaskScreen from './screens/TackleTaskScreen';
 
 import 'react-native-gesture-handler';
 
@@ -22,6 +23,7 @@ function App() {
         <Stack.Screen name="Breakdown" component={BreakdownScreen} />
         <Stack.Screen name="TaskGen" component={TaskGenScreen} />
         <Stack.Screen name="CompletedTasks" component={CompletedTasksScreen} />
+        <Stack.Screen name="TackleTask" component={TackleTaskScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

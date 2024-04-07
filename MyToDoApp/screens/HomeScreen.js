@@ -60,13 +60,8 @@ const HomeScreen = ({ navigation }) => {
       />
       
       <Button
-        title="Tasks By Reluctance Score"
-        onPress={() => navigation.navigate('TasksByScore')}
-      />
-      
-      <Button
-        title="Random Batch of Tasks"
-        onPress={() => navigation.navigate('RandomBatch')}
+        title="Tackle A Task"
+        onPress={() => navigation.navigate('Tackle A Task')}
       />
       
       <Button
