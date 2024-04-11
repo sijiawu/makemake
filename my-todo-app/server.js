@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const OpenAIApi = require('openai');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Model import
 const Task = require('./models/Task'); // Ensure this path matches your project structure
@@ -23,6 +23,10 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 // Routes
 // Create a new task
+app.get('/', (req, res) => {
+  res.send('Connected');
+});
+
 app.post('/tasks', async (req, res) => {
   try {
     const task = new Task(req.body);
