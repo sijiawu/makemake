@@ -21,6 +21,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 }).then(() => console.log('MongoDB Connected'))
   .catch(err => console.log(err));
 
+mongoose.set('debug', true);
+
 // Routes
 // Create a new task
 app.get('/', (req, res) => {
