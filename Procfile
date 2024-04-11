@@ -1,1 +1,1 @@
-web: cd my-todo-app && npm start
+web: node my-todo-app/server.js
