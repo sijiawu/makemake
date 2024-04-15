@@ -38,9 +38,18 @@ const DetailsScreen = ({ route, navigation }) => {
 
   const saveEdits = async () => {
     try {
-      await axios.patch(`/tasks/${task._id}`, { title, description });
-      setIsEditMode(false);
-      Alert.alert("Success", "Task updated successfully");
+      const response = await axios.patch(`/tasks/${task._id}`, { title, description, reluctanceScore });
+      
+      Alert.alert("Success", "Task updated successfully", [
+        {
+          text: "OK",
+          onPress: () => {
+            setIsEditMode(false);
+            navigation.navigate('Details', { task: response.data });
+          }
+        }
+      ]);
+
     } catch (error) {
       console.error("Failed to update task:", error);
       Alert.alert("Error", "Failed to update task");

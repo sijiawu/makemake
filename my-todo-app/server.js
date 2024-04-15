@@ -49,9 +49,10 @@ app.get('/tasks', async (req, res) => {
   }
 });
 
+// non-completed and master tasks only, for AllTasksScreen
 app.get('/tasks/active', async (req, res) => {
   try {
-    const tasks = await Task.find({ completed_at: null });
+    const tasks = await Task.find({ completed_at: null, masterTaskId: null });
     res.status(200).send(tasks);
   } catch (error) {
     res.status(500).send(error);
@@ -227,7 +228,7 @@ app.post('/tasks/saveTasks', async (req, res) => {
 app.get('/tasks/subtasks/:taskId', async (req, res) => {
   try {
     const masterTaskId = req.params.taskId;
-    const subtasks = await Task.find({ masterTaskId: masterTaskId });
+    const subtasks = await Task.find({ masterTaskId: masterTaskId }).sort({ title: 1 });
     // 0 is fine!
 
     // if (subtasks.length === 0) {

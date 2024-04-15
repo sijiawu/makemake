@@ -31,7 +31,7 @@ const taskSchema = new mongoose.Schema({
   },
   brokenDown: {
     type: Boolean, 
-    default: false 
+    default: false
   },
   masterTaskId: {
     type: mongoose.Schema.Types.ObjectId,
