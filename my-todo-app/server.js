@@ -132,16 +132,18 @@ app.patch('/tasks/:id', async (req, res) => {
 // Delete a task
 app.delete('/tasks/:id', async (req, res) => {
   try {
-    console.log("Deleting task: ", req.params.id)
-    const task = await Task.findByIdAndDelete(req.params.id);
-    if (!task) {
-      return res.status(404).send();
-    }
-    res.status(200).send(task);
+    console.log("Deleting task and its subtasks: ", req.params.id);
+
+    // Calling the recursive delete function
+    await deleteTaskAndSubtasks(req.params.id);
+
+    res.status(200).send({ message: "Task and all its subtasks were deleted successfully." });
   } catch (error) {
+    console.error("Failed to delete task:", error);
     res.status(500).send(error);
   }
 });
+
 
 app.post('/tasks/:id/breakdown', async (req, res) => {
   try {
@@ -266,6 +268,20 @@ app.post('/voice/tasks', async (req, res) => {
     res.status(500).send({ message: error.message || "An error occurred." });
   }
 });
+
+const deleteTaskAndSubtasks = async (taskId) => {
+  // Find all subtasks of the current task
+  const subtasks = await Task.find({ masterTaskId: taskId });
+
+  // Recursively delete each subtask
+  for (const subtask of subtasks) {
+    await deleteTaskAndSubtasks(subtask._id);
+  }
+
+  // After all subtasks have been handled, delete the current task
+  await Task.findByIdAndDelete(taskId);
+}
+
 
 function parseOpenAIResponse(responseJson) {
   const content = responseJson.choices[0].message.content;

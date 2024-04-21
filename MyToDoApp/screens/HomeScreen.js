@@ -63,13 +63,20 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.buttonText}>View Completed Tasks</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={[styles.recordButton, styles.startButton]} onPress={() => navigation.navigate('New Task')}>
+        <Text style={styles.buttonText}>New Task: Text</Text>
+      </TouchableOpacity>
+
       {isRecording ? (
-        <TouchableOpacity style={[styles.recordButton, styles.stopButton]} onPress={stopRecording}>
-          <Text style={styles.recordButtonText}>Stop Recording</Text>
-        </TouchableOpacity>
+        <View style={styles.bottomContainer}>
+          <Text style={styles.recordingTag}>Recording In Progress</Text>
+          <TouchableOpacity style={[styles.recordButton, styles.stopButton]} onPress={stopRecording}>
+            <Text style={styles.recordButtonText}>Stop Recording</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <TouchableOpacity style={[styles.recordButton, styles.startButton]} onPress={startRecording}>
-          <Text style={styles.recordButtonText}>Start Recording</Text>
+          <Text style={styles.recordButtonText}>New Task: Voice</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -82,6 +89,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#F5F5F5',
+  },
+  bottomContainer: {
+    alignItems: 'center',
     backgroundColor: '#F5F5F5',
   },
   title: {
@@ -118,6 +129,13 @@ const styles = StyleSheet.create({
   recordButtonText: {
     color: 'white',
     fontSize: 18,
+  },
+  recordingTag: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'red',
+    marginVertical: 20,
+    textAlign: 'center',
   },
 });
 

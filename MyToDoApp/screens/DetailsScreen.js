@@ -56,11 +56,15 @@ const DetailsScreen = ({ route, navigation }) => {
     }
   };
 
-  const deleteTask = async () => {
+  const deleteTask = async (taskId = task._id) => {
     try {
-      await axios.delete(`/tasks/${task._id}`);
+      await axios.delete(`/tasks/${taskId}`);
       Alert.alert("Success", "Task deleted successfully");
-      navigation.navigate('Home')
+      if (taskId === task._id) {
+        navigation.navigate('Home');
+      } else {
+        fetchTaskDetails(task._id); // Refresh main task details to update subtask list
+      }
     } catch (error) {
       console.error("Failed to delete task:", error);
       Alert.alert("Error", "Failed to delete task");
@@ -133,7 +137,7 @@ const DetailsScreen = ({ route, navigation }) => {
               <Text style={styles.scoreButtonText}>+</Text>
             </TouchableOpacity>
           </View>
-          <Button title="Save Edits" onPress={saveEdits} />
+          <Button title="Save" onPress={saveEdits} />
           <Button title="Cancel" onPress={() => setIsEditMode(false)} />
         </>
       ) : (
@@ -144,25 +148,35 @@ const DetailsScreen = ({ route, navigation }) => {
             {task.note && <Text style={styles.taskDetail}>Note: {task.note}</Text>}
             <Text style={styles.taskDetail}>Reluctance Score: {task.reluctanceScore}</Text>
           </View>
-          {!isBrokenDown && (
-            <View style={styles.actionContainer}>
-              <TouchableOpacity style={styles.actionButton} onPress={() => setIsEditMode(true)}>
-                <Text style={styles.buttonText}>Edit</Text>
+          <View style={styles.actionContainer}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => setIsEditMode(true)}>
+              <Text style={styles.buttonText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={() => deleteTask(task._id)}>
+              <Text style={styles.buttonText}>Delete</Text>
+            </TouchableOpacity>
+            {isBrokenDown ? (
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => navigation.navigate('New Task', { parentId: task._id })}
+              >
+                <Text style={styles.buttonText}>Add Subtask</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={deleteTask}>
-                <Text style={styles.buttonText}>Delete</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Breakdown', { task: task })}>
+            ) : (
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => navigation.navigate('Breakdown', { task: task })}
+              >
                 <Text style={styles.buttonText}>Break it down!</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={generateGoogleCalendarLink}>
-                <Text style={styles.buttonText}>Generate Google Calendar Event</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.checkmarkButton} onPress={() => markTaskAsCompleted(task._id)}>
-                <Text style={styles.checkmarkButtonText}>✔️ Complete Task</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            )}
+            <TouchableOpacity style={styles.actionButton} onPress={generateGoogleCalendarLink}>
+              <Text style={styles.buttonText}>Add to Google Calendar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.checkmarkButton} onPress={() => markTaskAsCompleted(task._id)}>
+              <Text style={styles.checkmarkButtonText}>✔️ Complete</Text>
+            </TouchableOpacity>
+          </View>
         </>
       )}
       {isBrokenDown && (
@@ -172,21 +186,28 @@ const DetailsScreen = ({ route, navigation }) => {
             data={subtasks}
             keyExtractor={(item) => item._id.toString()}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.taskItem}
-                onPress={() => navigation.navigate('Details', { task: item })}
-              >
-                <Text style={styles.taskTitle}>{item.title}</Text>
-                <Text style={styles.taskDetail}>Description: {item.description}</Text>
-                {item.note && <Text style={styles.taskDetail}>Note: {item.note}</Text>}
-                <Text style={styles.taskDetail}>Reluctance Score: {item.reluctanceScore}</Text>
-              </TouchableOpacity>
+              <View style={styles.taskItemContainer}>
+                <TouchableOpacity
+                  style={styles.taskItem}
+                  onPress={() => navigation.navigate('Details', { task: item })}
+                >
+                  <Text style={styles.taskTitle}>{item.title}</Text>
+                  <Text style={styles.taskDetail}>Description: {item.description}</Text>
+                  {item.note && <Text style={styles.taskDetail}>Note: {item.note}</Text>}
+                  <Text style={styles.taskDetail}>Reluctance Score: {item.reluctanceScore}</Text>
+                </TouchableOpacity>
+                {item.completed_at && (
+                  <View style={styles.doneStamp}>
+                    <Text style={styles.doneText}>DONE</Text>
+                  </View>
+                )}
+              </View>
             )}
             renderHiddenItem={(data, rowMap) => (
               <View style={styles.rowBack}>
                 <TouchableOpacity
                   style={[styles.backRightBtn, styles.backRightBtnRight]}
-                  onPress={() => deleteTask(data.item._id)}
+                  onPress={() => deleteTask(data.item._id)}  // Pass the subtask ID to deleteTask
                 >
                   <Text style={styles.backTextWhite}>Delete</Text>
                 </TouchableOpacity>
@@ -221,10 +242,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#ffffff', // White background for the text inputs
   },
-  textArea: {
-    minHeight: 120, // Provide ample space for description input
-    textAlignVertical: 'top', // Align text to the top for multiline input
-  },
   scoreAdjustmentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -249,18 +266,36 @@ const styles = StyleSheet.create({
     width: 60, // Ensure the score text box does not get squished
     textAlign: 'center',
   },
+  actionContainer: {
+    flexDirection: 'row',  // Align buttons horizontally
+    flexWrap: 'wrap',      // Allow buttons to wrap to the next line if not enough space
+    justifyContent: 'space-around', // Distribute extra space evenly around items
+    padding: 10,           // Padding around the container
+  },
   actionButton: {
-    backgroundColor: '#007bff',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    marginVertical: 5,
-    elevation: 2, // Shadow effect for Android
-    shadowOffset: { width: 1, height: 1 }, // Shadow settings for iOS
-    shadowColor: "#000",
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    backgroundColor: '#007AFF', // iOS blue color for buttons
+    paddingHorizontal: 10,  // Horizontal padding within the button
+    paddingVertical: 5,     // Vertical padding within the button
+    margin: 5,              // Margin between buttons
+    borderRadius: 5,        // Rounded corners for aesthetics
+    minWidth: 90,           // Minimum width for each button
+    justifyContent: 'center', // Center the text inside the button
+    alignItems: 'center'
+  },
+  checkmarkButton: {
+    backgroundColor: 'green', // Distinct color for the complete action
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    margin: 5,
+    borderRadius: 5,
+    minWidth: 90,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  checkmarkButtonText: {
+    color: 'white',
+    fontWeight: '500',
+    fontSize: 16,
   },
   buttonText: {
     color: '#ffffff',
@@ -294,20 +329,6 @@ const styles = StyleSheet.create({
   buttonGroup: {
     marginTop: 30,
   },
-  checkmarkButton: {
-    backgroundColor: '#28a745', // Green for the "Complete" action
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 5,
-  },
-  checkmarkButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   brokenDownTag: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -315,7 +336,13 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     textAlign: 'center', // Center this tag visually in the screen
   },
+  taskItemContainer: {
+    flexDirection: 'row',  // Arrange the task and stamp in a row
+    alignItems: 'center',  // Center items vertically
+    justifyContent: 'space-between',  // Distribute space between the task and the stamp
+  },
   taskItem: {
+    flex: 1,
     backgroundColor: '#ffffff', // White background for task items
     padding: 20,
     borderRadius: 10, // Rounded corners
@@ -365,6 +392,17 @@ const styles = StyleSheet.create({
   },  
   backTextWhite: {
     color: '#FFF',
+  },
+  doneStamp: {
+    top: 0,
+    botton: 0,
+    padding: 5,
+    backgroundColor: 'green',  // Green background for the "DONE" stamp
+    borderRadius: 5,  // Rounded corners
+  },
+  doneText: {
+    color: 'white',  // White text
+    fontWeight: 'bold',
   },
 });
 
