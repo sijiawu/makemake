@@ -63,6 +63,10 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.buttonText}>View Completed Tasks</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={[styles.button, styles.insightButton]} onPress={() => navigation.navigate('Daily Insight')}>
+        <Text style={styles.buttonText}>Praise me!</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={[styles.recordButton, styles.startButton]} onPress={() => navigation.navigate('New Task')}>
         <Text style={styles.buttonText}>New Task: Text</Text>
       </TouchableOpacity>
@@ -119,6 +123,9 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     width: '60%',
     alignItems: 'center',
+  },
+  insightButton: {
+    backgroundColor: '#512DAB',
   },
   startButton: {
     backgroundColor: 'green',

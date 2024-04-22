@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000;
 
 // Model import
 const Task = require('./models/Task'); // Ensure this path matches your project structure
-const { breakdownPrompt, inputPrompt } = require('./prompts');
+const { breakdownPrompt, inputPrompt, dailyInsightPrompt } = require('./prompts');
 
 app.use(express.json()); // Middleware to parse JSON bodies
 
@@ -269,6 +269,43 @@ app.post('/voice/tasks', async (req, res) => {
   }
 });
 
+app.get('/dailyInsight', async (req, res) => {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const tasks = await Task.find({
+    completed_at: { $gte: startOfDay, $lte: endOfDay },
+    completed: true
+  }).select('title description reluctanceScore completed_at createdAt');
+
+  if (tasks.length === 0) {
+    return res.status(200).send({ message: "You may not have completed any tasks today, but tomorrow is a new opportunity to shine! Rest well and prepare to tackle your goals!" });
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: 'user', content: dailyInsightPrompt(tasks) }],
+    }).catch(err => {
+      console.error("OpenAI API error:", err);
+      // Properly exit the function after sending a response on error
+      res.status(500).send({ message: "Failed to generate tasks due to an OpenAI API error." });
+      return; // Ensure no further execution
+    });
+
+    console.log("OpenAI API response:", response.choices[0].message.content);  // Log the whole response
+    return res.status(200).send({ message: response.choices[0].message.content });
+  } catch (error) {
+    console.error(error);
+    // A catch-all error handler should be the last resort for sending error responses
+    res.status(500).send({ message: error.message || "An error occurred." });
+  }
+});
+
+
 const deleteTaskAndSubtasks = async (taskId) => {
   // Find all subtasks of the current task
   const subtasks = await Task.find({ masterTaskId: taskId });
@@ -297,6 +334,8 @@ function parseOpenAIResponse(responseJson) {
 
   return subtasks;
 }
+
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
