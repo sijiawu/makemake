@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, FlatList, Text, TextInput, Button, ScrollView, Alert, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { View, Text, TextInput, Button, Alert, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import { useFocusEffect } from '@react-navigation/native';
-import axios from '../axiosConfig'; // Make sure the path is correct based on your project structure
+import axios from '../axiosConfig';
 
 const DetailsScreen = ({ route, navigation }) => {
-  const { task } = route.params;
+  const { task, isEditMode: initialIsEditMode = false } = route.params;
   const [taskDetails, setTaskDetails] = useState(null);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
@@ -13,10 +13,10 @@ const DetailsScreen = ({ route, navigation }) => {
   const [subtasks, setSubtasks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isBrokenDown, setIsBrokenDown] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(initialIsEditMode);
 
   const adjustScore = (adjustment) => {
-    const newScore = Math.max(1, Math.min(reluctanceScore + adjustment, 5)); // Ensure score is between 1 and 5
+    const newScore = Math.max(1, Math.min(reluctanceScore + adjustment, 5));
     setReluctanceScore(newScore);
   };
 
@@ -30,7 +30,7 @@ const DetailsScreen = ({ route, navigation }) => {
       const pad = (num) => (num < 10 ? '0' + num : num);
       return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
     };
-  
+
     const dates = `&dates=${formatDateTime(startDate)}/${formatDateTime(endDate)}`;
     const link = `${baseURL}${text}${details}${dates}`;
     Linking.openURL(link).catch(err => console.error('Error opening Google Calendar link', err));
@@ -39,13 +39,13 @@ const DetailsScreen = ({ route, navigation }) => {
   const saveEdits = async () => {
     try {
       const response = await axios.patch(`/tasks/${task._id}`, { title, description, reluctanceScore });
-      
+
       Alert.alert("Success", "Task updated successfully", [
         {
           text: "OK",
           onPress: () => {
             setIsEditMode(false);
-            navigation.navigate('Details', { task: response.data });
+            navigation.navigate('Details', { task: response.data, isEditMode: false });
           }
         }
       ]);
@@ -63,7 +63,7 @@ const DetailsScreen = ({ route, navigation }) => {
       if (taskId === task._id) {
         navigation.navigate('Home');
       } else {
-        fetchTaskDetails(task._id); // Refresh main task details to update subtask list
+        fetchTaskDetails(task._id);
       }
     } catch (error) {
       console.error("Failed to delete task:", error);
@@ -79,14 +79,13 @@ const DetailsScreen = ({ route, navigation }) => {
       setTitle(response.data.title);
       setDescription(response.data.description);
 
-      // Attempt to fetch subtasks
       const subtasksResponse = await axios.get(`/tasks/subtasks/${taskId}`);
       if (subtasksResponse.data && subtasksResponse.data.length > 0) {
         setSubtasks(subtasksResponse.data);
-        setIsBrokenDown(true); // The task has subtasks, hence it's broken down.
+        setIsBrokenDown(true);
       } else {
         setSubtasks([]);
-        setIsBrokenDown(false); // The task has no subtasks, not considered broken down.
+        setIsBrokenDown(false);
       }
     } catch (error) {
       console.error("Failed to fetch task details:", error);
@@ -99,14 +98,10 @@ const DetailsScreen = ({ route, navigation }) => {
     fetchTaskDetails(task._id);
   }, [task._id]);
 
-  // TODO: Refresh back from saving subtasks isn't working. Refresh navigating back isn't working either!
   useFocusEffect(
-    React.useCallback(() => {
-      // If coming back with a refresh flag, refetch the details
-      console.log("We are in here! - route.params?.refresh", route.params?.refresh)
+    useCallback(() => {
       if (route.params?.refresh) {
         fetchTaskDetails(task._id);
-        // Optionally reset the refresh flag to avoid unnecessary refreshes
         navigation.setParams({ refresh: false });
       }
     }, [route.params?.refresh, task._id])
@@ -121,13 +116,16 @@ const DetailsScreen = ({ route, navigation }) => {
     }
   }
 
+  const navigateToEditSubtask = (subtask) => {
+    navigation.navigate('Details', { task: subtask, isEditMode: true });
+  };
+
   return (
     <View style={styles.container}>
       {isEditMode ? (
         <>
           <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Task Title" />
           <TextInput style={styles.input} value={description} multiline onChangeText={setDescription} placeholder="Description" />
-          {/* Display and adjust reluctance score in edit mode */}
           <View style={styles.scoreAdjustmentContainer}>
             <TouchableOpacity onPress={() => adjustScore(-1)} style={styles.scoreButton}>
               <Text style={styles.scoreButtonText}>-</Text>
@@ -165,7 +163,7 @@ const DetailsScreen = ({ route, navigation }) => {
             ) : (
               <TouchableOpacity
                 style={styles.actionButton}
-                onPress={() => navigation.navigate('Breakdown', { task: task })}
+                onPress={() => navigation.navigate('Breakdown', { task })}
               >
                 <Text style={styles.buttonText}>Break it down!</Text>
               </TouchableOpacity>
@@ -188,6 +186,7 @@ const DetailsScreen = ({ route, navigation }) => {
             renderItem={({ item }) => (
               <View style={styles.taskItemContainer}>
                 <TouchableOpacity
+                  activeOpacity={1}
                   style={styles.taskItem}
                   onPress={() => navigation.navigate('Details', { task: item })}
                 >
@@ -206,31 +205,37 @@ const DetailsScreen = ({ route, navigation }) => {
             renderHiddenItem={(data, rowMap) => (
               <View style={styles.rowBack}>
                 <TouchableOpacity
-                  style={[styles.backRightBtn, styles.backRightBtnRight]}
-                  onPress={() => deleteTask(data.item._id)}  // Pass the subtask ID to deleteTask
+                  style={[styles.backBtn, styles.backBtnEdit]}
+                  onPress={() => navigateToEditSubtask(data.item)}
+                >
+                  <Text style={styles.backTextWhite}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.backBtn, styles.backBtnDone]}
+                  onPress={() => markTaskAsCompleted(data.item._id)}
+                >
+                  <Text style={styles.backTextWhite}>Done</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.backBtn, styles.backBtnDelete]}
+                  onPress={() => deleteTask(data.item._id)}
                 >
                   <Text style={styles.backTextWhite}>Delete</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.backRightBtn, styles.backRightBtnLeft]}
-                  onPress={() => markTaskAsCompleted(data.item._id)}
-                >
-                  <Text style={styles.backTextWhite}>Done!</Text>
-                </TouchableOpacity>
               </View>
             )}
-            rightOpenValue={-150}
+            rightOpenValue={-180}
           />
         </>
       )}
     </View>
-  );  
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f2f2f2', // Light gray background to soften the overall look
+    backgroundColor: '#f2f2f2',
     padding: 10,
   },
   input: {
@@ -240,18 +245,18 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 20,
     fontSize: 16,
-    backgroundColor: '#ffffff', // White background for the text inputs
+    backgroundColor: '#ffffff',
   },
   scoreAdjustmentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
-    paddingHorizontal: 40, // Space out the score adjustment buttons
+    paddingHorizontal: 40,
   },
   scoreButton: {
     backgroundColor: '#007bff',
-    borderRadius: 50, // Circular buttons
+    borderRadius: 50,
     width: 45,
     height: 45,
     alignItems: 'center',
@@ -259,38 +264,38 @@ const styles = StyleSheet.create({
   },
   scoreButtonText: {
     color: '#ffffff',
-    fontSize: 24, // Larger font size for clarity
+    fontSize: 24,
   },
   score: {
     fontSize: 20,
-    width: 60, // Ensure the score text box does not get squished
+    width: 60,
     textAlign: 'center',
   },
   actionContainer: {
-    flexDirection: 'row',  // Align buttons horizontally
-    flexWrap: 'wrap',      // Allow buttons to wrap to the next line if not enough space
-    justifyContent: 'space-around', // Distribute extra space evenly around items
-    padding: 10,           // Padding around the container
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    padding: 10,
   },
   actionButton: {
-    backgroundColor: '#007AFF', // iOS blue color for buttons
-    paddingHorizontal: 10,  // Horizontal padding within the button
-    paddingVertical: 5,     // Vertical padding within the button
-    margin: 5,              // Margin between buttons
-    borderRadius: 5,        // Rounded corners for aesthetics
-    minWidth: 90,           // Minimum width for each button
-    justifyContent: 'center', // Center the text inside the button
-    alignItems: 'center'
-  },
-  checkmarkButton: {
-    backgroundColor: 'green', // Distinct color for the complete action
+    backgroundColor: '#007AFF',
     paddingHorizontal: 10,
     paddingVertical: 5,
     margin: 5,
     borderRadius: 5,
     minWidth: 90,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+  },
+  checkmarkButton: {
+    backgroundColor: 'green',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    margin: 5,
+    borderRadius: 5,
+    minWidth: 90,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   checkmarkButtonText: {
     color: 'white',
@@ -301,19 +306,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '500',
-  },
-  detailLabel: {
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 5,
-    fontSize: 18,
-    color: '#333', // Dark grey for contrast
-  },
-  detailText: {
-    fontSize: 16,
-    marginBottom: 10,
-    color: '#333', // Darker text for better readability
-    lineHeight: 24, // Increase line height for better readability
   },
   taskContainer: {
     backgroundColor: '#ffffff',
@@ -326,26 +318,23 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  buttonGroup: {
-    marginTop: 30,
-  },
   brokenDownTag: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#007bff',
     marginVertical: 20,
-    textAlign: 'center', // Center this tag visually in the screen
+    textAlign: 'center',
   },
   taskItemContainer: {
-    flexDirection: 'row',  // Arrange the task and stamp in a row
-    alignItems: 'center',  // Center items vertically
-    justifyContent: 'space-between',  // Distribute space between the task and the stamp
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   taskItem: {
     flex: 1,
-    backgroundColor: '#ffffff', // White background for task items
+    backgroundColor: '#ffffff',
     padding: 20,
-    borderRadius: 10, // Rounded corners
+    borderRadius: 10,
     marginVertical: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -360,7 +349,7 @@ const styles = StyleSheet.create({
   },
   taskDetail: {
     fontSize: 14,
-    color: '#666666', // A softer color for details
+    color: '#666666',
     marginBottom: 5,
   },
   rowBack: {
@@ -368,40 +357,46 @@ const styles = StyleSheet.create({
     backgroundColor: '#DDD',
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'flex-end', // Adjust if necessary to ensure visibility
+    justifyContent: 'flex-end',
     marginVertical: 5,
-    borderRadius: 10, // Matching the front item's border radius
-    overflow: 'hidden', // Ensures the background doesn't spill outside the border radius
-    height: '100%', // Make sure it covers the height
+    borderRadius: 10,
+    overflow: 'hidden',
+    height: '100%',
   },
-  backRightBtn: {
+  backBtn: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: 75,
+    width: 60,
   },
-  backRightBtnRight: {
-    backgroundColor: 'red',
-    right: 75, // Adjust based on your design. This should be the position of the second button.
+  backBtnEdit: {
+    backgroundColor: '#3B82F6',
+    right: 120,
   },
-  backRightBtnLeft: {
+  backBtnDone: {
     backgroundColor: 'green',
-    right: 0, // This is for the delete button, ensuring it's visible
-  },  
+    right: 0,
+  },
+  backBtnDelete: {
+    backgroundColor: 'red',
+    right: 60,
+  },
   backTextWhite: {
     color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   doneStamp: {
     top: 0,
-    botton: 0,
+    bottom: 0,
     padding: 5,
-    backgroundColor: 'green',  // Green background for the "DONE" stamp
-    borderRadius: 5,  // Rounded corners
+    backgroundColor: 'green',
+    borderRadius: 5,
   },
   doneText: {
-    color: 'white',  // White text
+    color: 'white',
     fontWeight: 'bold',
   },
 });

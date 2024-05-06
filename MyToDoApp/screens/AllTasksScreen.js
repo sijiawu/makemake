@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
-import axios from '../axiosConfig'; // Adjust this path to your axios config file
+import axios from '../axiosConfig';
 import { useNavigation } from '@react-navigation/native';
 
 const AllTasksScreen = () => {
@@ -24,7 +24,7 @@ const AllTasksScreen = () => {
   const deleteTask = async (taskId) => {
     try {
       await axios.delete(`/tasks/${taskId}`);
-      fetchTasks(); // Refresh the list after deletion
+      fetchTasks();
     } catch (error) {
       console.error("Failed to delete task:", error);
     }
@@ -33,10 +33,14 @@ const AllTasksScreen = () => {
   const markTaskAsCompleted = async (taskId) => {
     try {
       await axios.patch(`/tasks/${taskId}`, { completed: true, completed_at: new Date() });
-      fetchTasks(); // Refresh the list to reflect the task is completed
+      fetchTasks();
     } catch (error) {
       console.error("Failed to mark task as completed:", error);
     }
+  };
+
+  const navigateToEdit = (task) => {
+    navigation.navigate('Details', { task, isEditMode: true });
   };
 
   return (
@@ -46,6 +50,7 @@ const AllTasksScreen = () => {
         keyExtractor={(item) => item._id.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
+            activeOpacity={1}
             style={styles.taskItem}
             onPress={() => navigation.navigate('Details', { task: item })}
           >
@@ -58,20 +63,26 @@ const AllTasksScreen = () => {
         renderHiddenItem={(data, rowMap) => (
           <View style={styles.rowBack}>
             <TouchableOpacity
-              style={[styles.backRightBtn, styles.backRightBtnRight]}
+              style={[styles.backBtn, styles.backBtnEdit]}
+              onPress={() => navigateToEdit(data.item)}
+            >
+              <Text style={styles.backTextWhite}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.backBtn, styles.backBtnDone]}
+              onPress={() => markTaskAsCompleted(data.item._id)}
+            >
+              <Text style={styles.backTextWhite}>Done</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.backBtn, styles.backBtnDelete]}
               onPress={() => deleteTask(data.item._id)}
             >
               <Text style={styles.backTextWhite}>Delete</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.backRightBtn, styles.backRightBtnLeft]}
-              onPress={() => markTaskAsCompleted(data.item._id)}
-            >
-              <Text style={styles.backTextWhite}>Done!</Text>
-            </TouchableOpacity>
           </View>
         )}
-        rightOpenValue={-150}
+        rightOpenValue={-180} // Adjust to fit all three buttons
       />
     </View>
   );
@@ -80,13 +91,13 @@ const AllTasksScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f4f7', // Matches the CompletedTasksScreen background
+    backgroundColor: '#f0f4f7',
     padding: 10,
   },
   taskItem: {
-    backgroundColor: '#ffffff', // White background for task items
+    backgroundColor: '#ffffff',
     padding: 20,
-    borderRadius: 10, // Rounded corners
+    borderRadius: 10,
     marginVertical: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -101,7 +112,7 @@ const styles = StyleSheet.create({
   },
   taskDetail: {
     fontSize: 14,
-    color: '#666666', // A softer color for details
+    color: '#666666',
     marginBottom: 5,
   },
   rowBack: {
@@ -109,30 +120,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#DDD',
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'flex-end', // Adjust if necessary to ensure visibility
+    justifyContent: 'flex-end',
     marginVertical: 5,
-    borderRadius: 10, // Matching the front item's border radius
-    overflow: 'hidden', // Ensures the background doesn't spill outside the border radius
-    height: '100%', // Make sure it covers the height
+    borderRadius: 10,
+    overflow: 'hidden',
+    height: '100%',
   },
-  backRightBtn: {
+  backBtn: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: 75,
+    width: 60, // Make the buttons narrower
   },
-  backRightBtnRight: {
-    backgroundColor: 'red',
-    right: 75, // Adjust based on your design. This should be the position of the second button.
+  backBtnEdit: {
+    backgroundColor: '#3B82F6',
+    right: 120,
   },
-  backRightBtnLeft: {
+  backBtnDone: {
     backgroundColor: 'green',
-    right: 0, // This is for the delete button, ensuring it's visible
-  },  
+    right: 0,
+  },
+  backBtnDelete: {
+    backgroundColor: 'red',
+    right: 60,
+  },
   backTextWhite: {
     color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
 
