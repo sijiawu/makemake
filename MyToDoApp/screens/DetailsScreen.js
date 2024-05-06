@@ -153,14 +153,13 @@ const DetailsScreen = ({ route, navigation }) => {
             <TouchableOpacity style={styles.actionButton} onPress={() => deleteTask(task._id)}>
               <Text style={styles.buttonText}>Delete</Text>
             </TouchableOpacity>
-            {isBrokenDown ? (
-              <TouchableOpacity
+            <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => navigation.navigate('New Task', { parentId: task._id })}
               >
                 <Text style={styles.buttonText}>Add Subtask</Text>
               </TouchableOpacity>
-            ) : (
+            {!isBrokenDown && (
               <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => navigation.navigate('Breakdown', { task })}
