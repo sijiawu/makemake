@@ -275,7 +275,7 @@ app.get('/dailyInsight', async (req, res) => {
 
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
-
+  console.log(startOfDay, endOfDay);
   const tasks = await Task.find({
     completed_at: { $gte: startOfDay, $lte: endOfDay },
     completed: true
@@ -289,6 +289,7 @@ app.get('/dailyInsight', async (req, res) => {
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: 'user', content: dailyInsightPrompt(tasks) }],
+      max_tokens: 150,
     }).catch(err => {
       console.error("OpenAI API error:", err);
       // Properly exit the function after sending a response on error
@@ -305,6 +306,43 @@ app.get('/dailyInsight', async (req, res) => {
   }
 });
 
+// Completed tasks endpoint
+app.get('/completedTasks', async (req, res) => {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayStart.getDate() + 1);
+
+    const completedTasks = await Task.find({
+      completed_at: { $gte: todayStart, $lt: todayEnd }
+    }).sort({ completed_at: 1 });
+
+    res.status(200).json({ tasks: completedTasks });
+  } catch (error) {
+    console.error('Error fetching completed tasks:', error);
+    res.status(500).json({ error: 'Error fetching completed tasks' });
+  }
+});
+
+// Created tasks endpoint
+app.get('/createdTasks', async (req, res) => {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayStart.getDate() + 1);
+
+    const createdTasks = await Task.find({
+      createdAt: { $gte: todayStart, $lt: todayEnd }
+    }).sort({ createdAt: 1 });
+
+    res.status(200).json({ tasks: createdTasks });
+  } catch (error) {
+    console.error('Error fetching created tasks:', error);
+    res.status(500).json({ error: 'Error fetching created tasks' });
+  }
+});
 
 const deleteTaskAndSubtasks = async (taskId) => {
   // Find all subtasks of the current task
