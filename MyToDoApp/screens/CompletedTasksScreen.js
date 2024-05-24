@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import axios from '../axiosConfig'; // Ensure this path correctly points to your Axios configuration
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import axios from '../axiosConfig';
+import { SwipeListView } from 'react-native-swipe-list-view';
 
 const CompletedTasksScreen = () => {
   const [completedTasks, setCompletedTasks] = useState([]);
@@ -18,24 +19,42 @@ const CompletedTasksScreen = () => {
     fetchCompletedTasks();
   }, []);
 
-  // Helper function to format dates
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} at ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+  const undoTaskCompletion = async (taskId) => {
+    try {
+      await axios.patch(`/tasks/${taskId}`, { completed: false, completed_at: null });
+      const updatedTasks = completedTasks.filter(task => task._id !== taskId);
+      setCompletedTasks(updatedTasks);
+    } catch (error) {
+      console.error("Failed to undo task completion:", error);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <FlatList
+      <SwipeListView
         data={completedTasks}
         keyExtractor={item => item._id.toString()}
         renderItem={({ item }) => (
-          <View style={styles.taskItem}>
+          <TouchableOpacity
+            style={styles.taskItem}
+            activeOpacity={1}
+          >
             <Text style={styles.taskTitle}>{item.title}</Text>
-            <Text style={styles.taskDetail}>Completed: {formatDate(item.completed_at)}</Text>
+            <Text style={styles.taskDetail}>Completed: {item.completed_at}</Text>
             <Text style={styles.taskDetail}>Reluctance Score: {item.reluctanceScore}</Text>
+          </TouchableOpacity>
+        )}
+        renderHiddenItem={(data, rowMap) => (
+          <View style={styles.rowBack}>
+            <TouchableOpacity
+              style={[styles.backRightBtn, styles.backRightBtnLeft]}
+              onPress={() => undoTaskCompletion(data.item._id)}
+            >
+              <Text style={styles.backTextWhite}>Undo</Text>
+            </TouchableOpacity>
           </View>
         )}
+        rightOpenValue={-75}
       />
     </View>
   );
@@ -67,6 +86,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666', // Uses a softer color for the details
     marginBottom: 5,
+  },
+  rowBack: {
+    alignItems: 'center',
+    backgroundColor: '#DDD',
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end', // Adjust if necessary to ensure visibility
+    marginVertical: 5,
+    borderRadius: 10, // Matching the front item's border radius
+    overflow: 'hidden', // Ensures the background doesn't spill outside the border radius
+    height: '100%', // Make sure it covers the height
+  },
+  backRightBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 75,
+  },
+  backRightBtnLeft: {
+    backgroundColor: 'orange',
+    right: 0, // Adjust the position of the button as needed
+  },
+  backTextWhite: {
+    color: '#FFF',
   },
 });
 
