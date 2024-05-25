@@ -29,27 +29,31 @@ const InsightScreen = ({ navigation }) => {
       // Fetch completed tasks
       const completedResponse = await axios.get('/completedTasks');
       const completedTasksData = completedResponse.data.tasks;
-
+  
       // Fetch created tasks count
       const createdResponse = await axios.get('/createdTasks');
       const createdTasksData = createdResponse.data.tasks;
-
+  
       // Construct congratulatory message
       const completedTasksCount = completedTasksData.length;
       const createdTasksCount = createdResponse.data.tasks.length;
-      const congratsMessage = (
-        <Text style={styles.congratulatoryMessage}>
-          Congratulations! You've completed <Text style={styles.highlight}>{completedTasksCount}</Text> tasks today and created <Text style={styles.highlight}>{createdTasksCount}</Text> new tasks.
-        </Text>
-      );
-
+      let congratsMessage = '';
+  
+      if (completedTasksCount > 0 || createdTasksCount > 0) {
+        congratsMessage = (
+          <Text style={styles.congratulatoryMessage}>
+            Congratulations! You've completed <Text style={styles.highlight}>{completedTasksCount}</Text> tasks today and created <Text style={styles.highlight}>{createdTasksCount}</Text> new tasks.
+          </Text>
+        );
+      }
+  
       setCongratulatoryMessage(congratsMessage);
       setCompletedTasks(completedTasksData);
-
+  
       // Fetch daily insight
       const insightResponse = await axios.get('/dailyInsight');
       setInsight(insightResponse.data.message);
-
+  
       // Animate text with paragraphs
       setLoading(false);
       animateMessages(congratsMessage, insightResponse.data.message);
@@ -58,6 +62,7 @@ const InsightScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
+  
 
   const animateMessages = (congratsMessage, insightMessage) => {
     setDisplayedInsight('');
