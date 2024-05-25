@@ -21,7 +21,7 @@ const CompletedTasksScreen = () => {
 
   const undoTaskCompletion = async (taskId) => {
     try {
-      await axios.patch(`/tasks/${taskId}`, { completed: false, completed_at: null });
+      await axios.patch(`/tasks/${taskId}`, { completed_at: null });
       const updatedTasks = completedTasks.filter(task => task._id !== taskId);
       setCompletedTasks(updatedTasks);
     } catch (error) {

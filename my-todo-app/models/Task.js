@@ -13,10 +13,6 @@ const taskSchema = new mongoose.Schema({
     type: Number,
     default: 1, // Default reluctance score if not specified
   },
-  completed: {
-    type: Boolean,
-    default: false, // By default, tasks are not completed
-  },
   completed_at: {
     type: Date,
     default: null

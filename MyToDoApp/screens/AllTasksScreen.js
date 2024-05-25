@@ -32,7 +32,7 @@ const AllTasksScreen = () => {
 
   const markTaskAsCompleted = async (taskId) => {
     try {
-      await axios.patch(`/tasks/${taskId}`, { completed: true, completed_at: new Date() });
+      await axios.patch(`/tasks/${taskId}`, { completed_at: new Date() });
       fetchTasks();
     } catch (error) {
       console.error("Failed to mark task as completed:", error);

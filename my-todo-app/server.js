@@ -89,7 +89,7 @@ app.get('/tasks/random', async (req, res) => {
   }
 
   try {
-    const tasks = await Task.find({ reluctanceScore: scoreRange, completed: false }).exec();
+    const tasks = await Task.find({ reluctanceScore: scoreRange, completed_at: null }).exec();
     if (tasks.length > 0) {
       // Randomly select a task
       const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
@@ -189,7 +189,6 @@ app.post('/tasks/:id/saveSubtasks', async (req, res) => {
       const newTask = new Task({
         ...subtask,
         // Set additional properties as needed, e.g., marking them as not completed
-        completed: false,
         brokenDown: false,
         masterTaskId: id,
         note: `Created from this big task: ${originalTask.title}`,
@@ -214,7 +213,6 @@ app.post('/tasks/saveTasks', async (req, res) => {
     const savedTasks = await Promise.all(tasks.map(async (task) => {
       const newTask = new Task({
         ...task,
-        completed: false,
         brokenDown: false,
       });
       return await newTask.save();
@@ -278,7 +276,6 @@ app.get('/dailyInsight', async (req, res) => {
   console.log(startOfDay, endOfDay);
   const tasks = await Task.find({
     completed_at: { $gte: startOfDay, $lte: endOfDay },
-    completed: true
   }).select('title description reluctanceScore completed_at createdAt');
 
   if (tasks.length === 0) {
