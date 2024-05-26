@@ -19,11 +19,15 @@ const CompletedTasksScreen = () => {
     fetchCompletedTasks();
   }, []);
 
-  const undoTaskCompletion = async (taskId) => {
+  const undoTaskCompletion = async (taskId, masterTaskId) => {
     try {
       await axios.patch(`/tasks/${taskId}`, { completed_at: null });
       const updatedTasks = completedTasks.filter(task => task._id !== taskId);
       setCompletedTasks(updatedTasks);
+      // If the task has a masterTaskId (i.e., it's a subtask), undo completion of the parent task
+      if (masterTaskId) {
+        await axios.patch(`/tasks/${masterTaskId}`, { completed_at: null });
+      }
     } catch (error) {
       console.error("Failed to undo task completion:", error);
     }
@@ -48,7 +52,7 @@ const CompletedTasksScreen = () => {
           <View style={styles.rowBack}>
             <TouchableOpacity
               style={[styles.backRightBtn, styles.backRightBtnLeft]}
-              onPress={() => undoTaskCompletion(data.item._id)}
+              onPress={() => undoTaskCompletion(data.item._id, data.item.masterTaskId)}
             >
               <Text style={styles.backTextWhite}>Undo</Text>
             </TouchableOpacity>
