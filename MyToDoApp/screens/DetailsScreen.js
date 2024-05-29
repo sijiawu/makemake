@@ -109,12 +109,50 @@ const DetailsScreen = ({ route, navigation }) => {
 
   async function markTaskAsCompleted(taskId) {
     try {
+      // Patch the task to mark it as completed
       await axios.patch(`/tasks/${taskId}`, { completed_at: new Date() });
-      navigation.navigate('CompletedTasks');
+  
+      // Check if it's a subtask
+      const isSubtask = subtasks.some(subtask => subtask._id === taskId);
+  
+      if (isSubtask) {
+        // Check if all other subtasks are completed
+        const allSubtasksCompleted = subtasks.every(subtask => subtask.completed_at || subtask._id === taskId);
+  
+        if (allSubtasksCompleted) {
+          Alert.alert(
+            "All Subtasks Completed",
+            "Looks like you've completed all the subtasks! Would you like to mark the task as completed?",
+            [
+              {
+                text: "No",
+                onPress: () => {
+                  // Reload the page to reflect the changes
+                  fetchTaskDetails(task._id);
+                }
+              },
+              {
+                text: "Yes",
+                onPress: () => {
+                  // Mark the parent task as completed
+                  markTaskAsCompleted(task._id);
+                }
+              }
+            ]
+          );
+        } else {
+          // Reload the page to reflect the changes
+          fetchTaskDetails(taskId);
+        }
+      } else {
+        // Navigate to the CompletedTasks screen for the main task
+        navigation.navigate('CompletedTasks');
+      }
     } catch (error) {
       console.error("Failed to mark task as completed:", error);
     }
   }
+  
 
   const navigateToEditSubtask = (subtask) => {
     navigation.navigate('Details', { task: subtask, isEditMode: true });
