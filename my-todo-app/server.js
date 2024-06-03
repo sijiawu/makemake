@@ -1,13 +1,16 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const auth = require('./middleware/auth');
+const User = require('./models/User');
+const Task = require('./models/Task');
+const { breakdownPrompt, inputPrompt, dailyInsightPrompt } = require('./prompts');
 const OpenAIApi = require('openai');
+
 const app = express();
 const port = process.env.PORT || 3000;
-
-// Model import
-const Task = require('./models/Task'); // Ensure this path matches your project structure
-const { breakdownPrompt, inputPrompt, dailyInsightPrompt } = require('./prompts');
 
 app.use(express.json()); // Middleware to parse JSON bodies
 
@@ -18,20 +21,159 @@ const openai = new OpenAIApi({
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 }).then(() => console.log('MongoDB Connected'))
   .catch(err => console.log(err));
 
 mongoose.set('debug', true);
 
-// Routes
-// Create a new task
-app.get('/', (req, res) => {
-  res.send('Connected');
+// Authentication routes
+app.post('/api/auth/register', async (req, res) => {
+  console.log(req.body);
+
+  const { email, password, securityQuestion, securityAnswer } = req.body;
+  try {
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ msg: 'User already exists' });
+    }
+
+    user = new User({
+      email,
+      password,
+      securityQuestion,
+      securityAnswer,
+    });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.securityAnswer = await bcrypt.hash(securityAnswer, salt);
+
+    await user.save();
+
+    const payload = {
+      user: {
+        id: user.id,
+      },
+    };
+
+    jwt.sign(
+      payload,
+      'your_jwt_secret',
+      { expiresIn: '1h' },
+      (err, token) => {
+        if (err) throw err;
+        res.json({ token });
+      }
+    );
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
 });
 
-app.post('/tasks', async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
   try {
-    const task = new Task(req.body);
+    let user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: 'Invalid Credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Invalid Credentials' });
+    }
+
+    const payload = {
+      user: {
+        id: user.id,
+      },
+    };
+
+    jwt.sign(
+      payload,
+      'your_jwt_secret',
+      { expiresIn: '1h' },
+      (err, token) => {
+        if (err) throw err;
+        res.json({ token, user });
+      }
+    );
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// Request Password Reset
+app.post('/api/password/request-reset', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: 'User not found' });
+    }
+
+    res.json({ securityQuestion: user.securityQuestion });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
+// Verify Security Answer
+app.post('/api/password/verify-answer', async (req, res) => {
+  const { email, securityAnswer } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(securityAnswer, user.securityAnswer);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Incorrect security answer' });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
+// Reset Password
+app.post('/api/password/reset-password', async (req, res) => {
+  const { email, newPassword } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: 'User not found' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await user.save();
+
+    res.json({ msg: 'Password has been reset' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
+
+// Task routes
+app.post('/tasks', auth, async (req, res) => {
+  try {
+    const task = new Task({
+      ...req.body,
+      user: req.user.id,
+    });
     await task.save();
     res.status(201).send(task);
   } catch (error) {
@@ -39,39 +181,34 @@ app.post('/tasks', async (req, res) => {
   }
 });
 
-// Get all tasks
-app.get('/tasks', async (req, res) => {
+app.get('/tasks', auth, async (req, res) => {
   try {
-    const tasks = await Task.find({});
+    const tasks = await Task.find({ user: req.user.id });
     res.status(200).send(tasks);
   } catch (error) {
     res.status(500).send(error);
   }
 });
 
-// non-completed and master tasks only, for AllTasksScreen
-app.get('/tasks/active', async (req, res) => {
+app.get('/tasks/active', auth, async (req, res) => {
   try {
-    const tasks = await Task.find({ completed_at: null, masterTaskId: null });
+    const tasks = await Task.find({ user: req.user.id, completed_at: null, masterTaskId: null });
     res.status(200).send(tasks);
   } catch (error) {
     res.status(500).send(error);
   }
 });
 
-// Putting it all the way up here to get it matched first
-app.get('/tasks/completed', async (req, res) => {
+app.get('/tasks/completed', auth, async (req, res) => {
   try {
-    const completedTasks = await Task.find({ completed_at: { $ne: null } });
-    console.log(completedTasks)
+    const completedTasks = await Task.find({ user: req.user.id, completed_at: { $ne: null } });
     res.json(completedTasks);
   } catch (error) {
     res.status(500).send({ message: "Failed to fetch completed tasks." });
   }
 });
 
-app.get('/tasks/random', async (req, res) => {
-  console.log("HERE: ", req.query)
+app.get('/tasks/random', auth, async (req, res) => {
   const energyLevel = req.query.energyLevel;
   let scoreRange;
   switch (energyLevel) {
@@ -89,7 +226,7 @@ app.get('/tasks/random', async (req, res) => {
   }
 
   try {
-    const tasks = await Task.find({ reluctanceScore: scoreRange, completed_at: null }).exec();
+    const tasks = await Task.find({ user: req.user.id, reluctanceScore: scoreRange, completed_at: null }).exec();
     if (tasks.length > 0) {
       // Randomly select a task
       const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
@@ -103,10 +240,9 @@ app.get('/tasks/random', async (req, res) => {
   }
 });
 
-// Get a single task by id
-app.get('/tasks/:id', async (req, res) => {
+app.get('/tasks/:id', auth, async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findOne({ _id: req.params.id, user: req.user.id });
     if (!task) {
       return res.status(404).send();
     }
@@ -116,10 +252,9 @@ app.get('/tasks/:id', async (req, res) => {
   }
 });
 
-// Update a task
-app.patch('/tasks/:id', async (req, res) => {
+app.patch('/tasks/:id', auth, async (req, res) => {
   try {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const task = await Task.findOneAndUpdate({ _id: req.params.id, user: req.user.id }, req.body, { new: true, runValidators: true });
     if (!task) {
       return res.status(404).send();
     }
@@ -129,13 +264,12 @@ app.patch('/tasks/:id', async (req, res) => {
   }
 });
 
-// Delete a task
-app.delete('/tasks/:id', async (req, res) => {
+app.delete('/tasks/:id', auth, async (req, res) => {
   try {
     console.log("Deleting task and its subtasks: ", req.params.id);
 
     // Calling the recursive delete function
-    await deleteTaskAndSubtasks(req.params.id);
+    await deleteTaskAndSubtasks(req.params.id, req.user.id);
 
     res.status(200).send({ message: "Task and all its subtasks were deleted successfully." });
   } catch (error) {
@@ -144,11 +278,10 @@ app.delete('/tasks/:id', async (req, res) => {
   }
 });
 
-
-app.post('/tasks/:id/breakdown', async (req, res) => {
+app.post('/tasks/:id/breakdown', auth, async (req, res) => {
   try {
     console.log(req.params.id)
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findOne({ _id: req.params.id, user: req.user.id });
     if (!task) {
       return res.status(404).send({ message: "Task not found." });
     }
@@ -171,13 +304,13 @@ app.post('/tasks/:id/breakdown', async (req, res) => {
   }
 });
 
-app.post('/tasks/:id/saveSubtasks', async (req, res) => {
+app.post('/tasks/:id/saveSubtasks', auth, async (req, res) => {
   const { id } = req.params;
   const { subtasks } = req.body;
 
   try {
     // Optional: Find and mark the original task as 'broken down'
-    const originalTask = await Task.findById(id);
+    const originalTask = await Task.findOne({ _id: id, user: req.user.id });
     if (!originalTask) {
       return res.status(404).send({ message: 'Original task not found.' });
     }
@@ -192,6 +325,7 @@ app.post('/tasks/:id/saveSubtasks', async (req, res) => {
         brokenDown: false,
         masterTaskId: id,
         note: `Created from this big task: ${originalTask.title}`,
+        user: req.user.id,
       });
       return await newTask.save();
     }));
@@ -203,10 +337,7 @@ app.post('/tasks/:id/saveSubtasks', async (req, res) => {
   }
 });
 
-//very similar to method above. Please refactor/combine!
-app.post('/tasks/saveTasks', async (req, res) => {
-  console.log("HERE WITH tasks!!!")
-
+app.post('/tasks/saveTasks', auth, async (req, res) => {
   const { tasks } = req.body;
   try {
     // Create and save each task as a new task
@@ -214,6 +345,7 @@ app.post('/tasks/saveTasks', async (req, res) => {
       const newTask = new Task({
         ...task,
         brokenDown: false,
+        user: req.user.id,
       });
       return await newTask.save();
     }));
@@ -225,15 +357,10 @@ app.post('/tasks/saveTasks', async (req, res) => {
   }
 });
 
-app.get('/tasks/subtasks/:taskId', async (req, res) => {
+app.get('/tasks/subtasks/:taskId', auth, async (req, res) => {
   try {
     const masterTaskId = req.params.taskId;
-    const subtasks = await Task.find({ masterTaskId: masterTaskId }).sort({ title: 1 });
-    // 0 is fine!
-
-    // if (subtasks.length === 0) {
-    //   return res.status(404).send({ message: 'No subtasks found for this task.' });
-    // }
+    const subtasks = await Task.find({ masterTaskId: masterTaskId, user: req.user.id }).sort({ title: 1 });
 
     res.status(200).json(subtasks);
   } catch (error) {
@@ -242,7 +369,7 @@ app.get('/tasks/subtasks/:taskId', async (req, res) => {
   }
 });
 
-app.post('/voice/tasks', async (req, res) => {
+app.post('/voice/tasks', auth, async (req, res) => {
   const { text } = req.body; // Transcribed text from voice input
   console.log("Got some good stuff: ", text)
 
@@ -267,7 +394,7 @@ app.post('/voice/tasks', async (req, res) => {
   }
 });
 
-app.get('/dailyInsight', async (req, res) => {
+app.get('/dailyInsight', auth, async (req, res) => {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
@@ -275,6 +402,7 @@ app.get('/dailyInsight', async (req, res) => {
   endOfDay.setHours(23, 59, 59, 999);
   console.log(startOfDay, endOfDay);
   const tasks = await Task.find({
+    user: req.user.id,
     completed_at: { $gte: startOfDay, $lte: endOfDay },
   }).select('title description reluctanceScore completed_at createdAt');
 
@@ -303,8 +431,7 @@ app.get('/dailyInsight', async (req, res) => {
   }
 });
 
-// Completed tasks endpoint
-app.get('/completedTasks', async (req, res) => {
+app.get('/completedTasks', auth, async (req, res) => {
   try {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -312,6 +439,7 @@ app.get('/completedTasks', async (req, res) => {
     todayEnd.setDate(todayStart.getDate() + 1);
 
     const completedTasks = await Task.find({
+      user: req.user.id,
       completed_at: { $gte: todayStart, $lt: todayEnd }
     }).sort({ completed_at: 1 });
 
@@ -322,8 +450,7 @@ app.get('/completedTasks', async (req, res) => {
   }
 });
 
-// Created tasks endpoint
-app.get('/createdTasks', async (req, res) => {
+app.get('/createdTasks', auth, async (req, res) => {
   try {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -331,6 +458,7 @@ app.get('/createdTasks', async (req, res) => {
     todayEnd.setDate(todayStart.getDate() + 1);
 
     const createdTasks = await Task.find({
+      user: req.user.id,
       createdAt: { $gte: todayStart, $lt: todayEnd }
     }).sort({ createdAt: 1 });
 
@@ -341,19 +469,35 @@ app.get('/createdTasks', async (req, res) => {
   }
 });
 
-const deleteTaskAndSubtasks = async (taskId) => {
+// a one-time endpoint to assign all tasks to a single user
+// app.put('/update-tasks-user', async (req, res) => {
+//   const { userId } = req.body;
+
+//   if (!userId) {
+//     return res.status(400).json({ msg: 'User ID is required' });
+//   }
+
+//   try {
+//     const result = await Task.updateMany({}, { $set: { user: userId } });
+//     res.json({ msg: 'Tasks updated successfully', result });
+//   } catch (err) {
+//     console.error('Error updating tasks:', err);
+//     res.status(500).json({ msg: 'Server error' });
+//   }
+// });
+
+const deleteTaskAndSubtasks = async (taskId, userId) => {
   // Find all subtasks of the current task
-  const subtasks = await Task.find({ masterTaskId: taskId });
+  const subtasks = await Task.find({ masterTaskId: taskId, user: userId });
 
   // Recursively delete each subtask
   for (const subtask of subtasks) {
-    await deleteTaskAndSubtasks(subtask._id);
+    await deleteTaskAndSubtasks(subtask._id, userId);
   }
 
   // After all subtasks have been handled, delete the current task
-  await Task.findByIdAndDelete(taskId);
+  await Task.findOneAndDelete({ _id: taskId, user: userId });
 }
-
 
 function parseOpenAIResponse(responseJson) {
   const content = responseJson.choices[0].message.content;
@@ -369,8 +513,6 @@ function parseOpenAIResponse(responseJson) {
 
   return subtasks;
 }
-
-
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
