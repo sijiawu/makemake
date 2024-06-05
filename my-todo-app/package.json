@@ -17,8 +17,5 @@
     "mongodb": "^6.4.0",
     "mongoose": "^8.2.0",
     "openai": "^4.28.4"
-  },
-  "engines": {
-    "node": "20.11.1"
   }
 }
