@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-// const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('./middleware/auth');
 const User = require('./models/User');
@@ -82,10 +82,10 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }
 
-    // const isMatch = await bcrypt.compare(password, user.password);
-    // if (!isMatch) {
-    //   return res.status(400).json({ msg: 'Invalid Credentials' });
-    // }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Invalid Credentials' });
+    }
 
     const payload = {
       user: {
