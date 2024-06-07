@@ -61,7 +61,6 @@ app.post('/api/auth/register', async (req, res) => {
     jwt.sign(
       payload,
       'your_jwt_secret',
-      { expiresIn: '1h' },
       (err, token) => {
         if (err) throw err;
         res.json({ token });
@@ -287,7 +286,7 @@ app.post('/tasks/:id/breakdown', auth, async (req, res) => {
     }
 
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-3.5-turbo-1106",
       messages: [{ role: 'user', content: breakdownPrompt(task.title, task.description) }],
     }).catch(err => {
       console.error("OpenAI API error:", err);
@@ -375,7 +374,7 @@ app.post('/voice/tasks', auth, async (req, res) => {
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-3.5-turbo-1106",
       messages: [{ role: 'user', content: inputPrompt(text) }],
     }).catch(err => {
       console.error("OpenAI API error:", err);
@@ -413,7 +412,7 @@ app.get('/dailyInsight', auth, async (req, res) => {
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-3.5-turbo-1106",
       messages: [{ role: 'user', content: dailyInsightPrompt(tasks) }],
     }).catch(err => {
       console.error("OpenAI API error:", err);
@@ -447,7 +446,7 @@ app.get('/resistanceAnalysis', auth, async (req, res) => {
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-3.5-turbo-1106",
       messages: [{ role: 'user', content: resistanceAnalysisPrompt(tasks) }],
     }).catch(err => {
       console.error("OpenAI API error:", err);
