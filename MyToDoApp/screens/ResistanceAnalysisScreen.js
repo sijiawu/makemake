@@ -15,33 +15,30 @@ const ResistanceAnalysisScreen = ({ navigation }) => {
   const [displayedAnalysis, setDisplayedAnalysis] = useState('');
   const [highReluctanceTasks, setHighReluctanceTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const analysisAnim = useRef(new Animated.Value(0)).current; // Animation for analysis message
+  const analysisAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    fetchResistanceAnalysis();
+    fetchAnalysisAndTasks();
   }, []);
 
-  const fetchResistanceAnalysis = async () => {
+  const fetchAnalysisAndTasks = async () => {
     setLoading(true);
     try {
-      // Fetch high reluctance tasks
       const response = await axios.get('/resistanceAnalysis');
-      const tasksData = response.data.tasks || [];
-      const analysisMessage = response.data.message || '';
-  
-      setHighReluctanceTasks(tasksData);
-      setAnalysis(analysisMessage);
-  
-      // Animate text with paragraphs
+      const { tasks, message } = response.data;
+
+      setHighReluctanceTasks(tasks || []);
+      setAnalysis(message);
       setLoading(false);
-      animateMessages(analysisMessage);
+
+      animateAnalysis(message);
     } catch (error) {
       console.error('Failed to fetch resistance analysis:', error);
       setLoading(false);
     }
   };
 
-  const animateMessages = (analysisMessage) => {
+  const animateAnalysis = (analysisMessage) => {
     setDisplayedAnalysis('');
     analysisAnim.setValue(0);
 
@@ -54,13 +51,16 @@ const ResistanceAnalysisScreen = ({ navigation }) => {
     setDisplayedAnalysis(analysisMessage);
   };
 
-  const renderTaskItem = ({ item }) => (
-    <View style={styles.taskItem}>
-      <Text style={styles.taskTitle}>{item.title}</Text>
-      {item.description && <Text style={styles.taskDescription}>{item.description}</Text>}
-      {item.note && <Text style={styles.taskNote}>{item.note}</Text>}
-    </View>
-  );
+  const renderTaskItem = ({ item }) => {
+    return (
+      <View style={styles.taskItem}>
+        <Text style={styles.taskTitle}>{item.title}</Text>
+        {item.description && <Text style={styles.taskDescription}>{item.description}</Text>}
+        {item.note && <Text style={styles.taskNote}>{item.note}</Text>}
+        <Text style={styles.taskScore}>Reluctance Score: {item.reluctanceScore}</Text>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -69,16 +69,14 @@ const ResistanceAnalysisScreen = ({ navigation }) => {
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={styles.taskListHeader}>Tasks with High Reluctance</Text>
-          {highReluctanceTasks.length > 0 ? (
+          {highReluctanceTasks.length > 0 && (
             <FlatList
               data={highReluctanceTasks}
               keyExtractor={(item) => item._id.toString()}
               renderItem={renderTaskItem}
               style={styles.taskList}
-              scrollEnabled={false} // Disable internal scroll
+              scrollEnabled={false}
             />
-          ) : (
-            <Text style={styles.noTasksMessage}>No tasks with high reluctance found.</Text>
           )}
           <Animated.Text style={[styles.analysisText, { opacity: analysisAnim }]}>
             {displayedAnalysis}
@@ -111,6 +109,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'left',
     width: '100%',
+    paddingVertical: 20, // Adjust padding to position the text higher
   },
   taskListHeader: {
     color: 'white',
@@ -141,13 +140,10 @@ const styles = StyleSheet.create({
   taskNote: {
     color: 'white',
     fontSize: 14,
-    fontStyle: 'italic',
   },
-  noTasksMessage: {
+  taskScore: {
     color: 'white',
-    fontSize: 16,
-    marginVertical: 10,
-    textAlign: 'center',
+    fontSize: 14,
   },
 });
 

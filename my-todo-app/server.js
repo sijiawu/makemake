@@ -401,7 +401,7 @@ app.get('/dailyInsight', auth, async (req, res) => {
 
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
-  console.log(startOfDay, endOfDay);
+
   const tasks = await Task.find({
     user: req.user.id,
     completed_at: { $gte: startOfDay, $lte: endOfDay },
@@ -415,7 +415,6 @@ app.get('/dailyInsight', auth, async (req, res) => {
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: 'user', content: dailyInsightPrompt(tasks) }],
-      max_tokens: 150,
     }).catch(err => {
       console.error("OpenAI API error:", err);
       // Properly exit the function after sending a response on error
@@ -433,24 +432,34 @@ app.get('/dailyInsight', auth, async (req, res) => {
 });
 
 app.get('/resistanceAnalysis', auth, async (req, res) => {
+  const tasks = await Task.find({
+    user: req.user.id,
+    reluctanceScore: { $gte: 4 },
+    completed_at: null,
+  }).select('title description note reluctanceScore createdAt');
+
+  if (!tasks || tasks.length === 0) {
+    return res.status(200).send({
+      message: "Great job! You have no tasks with high reluctance at the moment. Keep up the good work!",
+      tasks: []
+    });
+  }
+
   try {
-    const tasks = await Task.find({
-      user: req.user.id,
-      reluctanceScore: { $gte: 3 },
-    }).select('title description note reluctanceScore createdAt completed_at');
-
-    if (tasks.length === 0) {
-      return res.status(200).send({ message: "There are no tasks with a high reluctance score at the moment.", tasks: [] });
-    }
-
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: 'user', content: resistanceAnalysisPrompt(tasks) }],
-      max_tokens: 200,
+    }).catch(err => {
+      console.error("OpenAI API error:", err);
+      res.status(500).send({ message: "Failed to generate resistance analysis due to an OpenAI API error." });
+      return;
     });
 
     console.log("OpenAI API response:", response.choices[0].message.content);
-    return res.status(200).send({ message: response.choices[0].message.content, tasks });
+    return res.status(200).send({
+      message: response.choices[0].message.content,
+      tasks: tasks
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: error.message || "An error occurred." });
