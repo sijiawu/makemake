@@ -85,6 +85,9 @@ const HomeScreen = ({ navigation, setIsAuthenticated }) => {
         <Button mode="contained" onPress={() => navigation.navigate('Daily Insight')} style={styles.button}>
           Praise me!
         </Button>
+        <Button mode="contained" onPress={() => navigation.navigate('Resistance Analysis')} style={styles.button}>
+          Analyze My Resistance
+        </Button>
         <Button mode="contained" onPress={() => navigation.navigate('New Task')} style={styles.button}>
           New Task: Text
         </Button>

@@ -16,6 +16,7 @@ import TaskGenScreen from './screens/TaskGenScreen';
 import TackleTaskScreen from './screens/TackleTaskScreen';
 import NewTaskScreen from './screens/NewTaskScreen';
 import DailyInsightScreen from './screens/DailyInsightScreen';
+import ResistanceAnalysisScreen from './screens/ResistanceAnalysisScreen';
 
 import 'react-native-gesture-handler';
 
@@ -52,6 +53,7 @@ const App = () => {
               <Stack.Screen name="Tackle Task" component={TackleTaskScreen} />
               <Stack.Screen name="New Task" component={NewTaskScreen} />
               <Stack.Screen name="Daily Insight" component={DailyInsightScreen} />
+              <Stack.Screen name="Resistance Analysis" component={ResistanceAnalysisScreen} />
             </>
           ) : (
             <>

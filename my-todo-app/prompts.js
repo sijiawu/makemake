@@ -17,10 +17,22 @@ const dailyInsightPrompt = (tasks) => `
   }).join(' ')} Provide encouragement and insight based on these tasks.
 `;
 
+const resistanceAnalysisPrompt = (tasks) => `
+  Based on these tasks: ${tasks.map(t => {
+    const taskInfo = `${t.title}${t.description ? ` - ${t.description}` : ''}${t.note ? ` (Note: ${t.note})` : ''}`;
+    return taskInfo;
+  }).join(' ')}
+
+  Summarize the common aspects among these tasks, such as themes, types of activities, or skills involved. Provide insight into why these common aspects might be significant or difficult for the user. 
+
+  Based on these insights, offer suggestions for how the user can approach similar tasks in the future more effectively. These suggestions should be practical and tailored to the user's potential strengths and areas for improvement. 
+`;
+
 // Export the prompts
 module.exports = {
     breakdownPrompt,
     inputPrompt,
-    dailyInsightPrompt
+    dailyInsightPrompt,
+    resistanceAnalysisPrompt
 };
 

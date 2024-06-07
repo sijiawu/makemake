@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const auth = require('./middleware/auth');
 const User = require('./models/User');
 const Task = require('./models/Task');
-const { breakdownPrompt, inputPrompt, dailyInsightPrompt } = require('./prompts');
+const { breakdownPrompt, inputPrompt, dailyInsightPrompt, resistanceAnalysisPrompt } = require('./prompts');
 const OpenAIApi = require('openai');
 
 const app = express();
@@ -394,6 +394,7 @@ app.post('/voice/tasks', auth, async (req, res) => {
   }
 });
 
+
 app.get('/dailyInsight', auth, async (req, res) => {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
@@ -427,6 +428,31 @@ app.get('/dailyInsight', auth, async (req, res) => {
   } catch (error) {
     console.error(error);
     // A catch-all error handler should be the last resort for sending error responses
+    res.status(500).send({ message: error.message || "An error occurred." });
+  }
+});
+
+app.get('/resistanceAnalysis', auth, async (req, res) => {
+  try {
+    const tasks = await Task.find({
+      user: req.user.id,
+      reluctanceScore: { $gte: 3 },
+    }).select('title description note reluctanceScore createdAt completed_at');
+
+    if (tasks.length === 0) {
+      return res.status(200).send({ message: "There are no tasks with a high reluctance score at the moment.", tasks: [] });
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: 'user', content: resistanceAnalysisPrompt(tasks) }],
+      max_tokens: 200,
+    });
+
+    console.log("OpenAI API response:", response.choices[0].message.content);
+    return res.status(200).send({ message: response.choices[0].message.content, tasks });
+  } catch (error) {
+    console.error(error);
     res.status(500).send({ message: error.message || "An error occurred." });
   }
 });
