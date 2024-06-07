@@ -34,13 +34,16 @@ app.post('/api/auth/register', async (req, res) => {
 
   const { email, password, securityQuestion, securityAnswer } = req.body;
   try {
-    let user = await User.findOne({ email });
+    // Convert email to lowercase before checking and storing
+    const lowerCaseEmail = email.toLowerCase();
+
+    let user = await User.findOne({ email: lowerCaseEmail });
     if (user) {
       return res.status(400).json({ msg: 'User already exists' });
     }
 
     user = new User({
-      email,
+      email: lowerCaseEmail,
       password,
       securityQuestion,
       securityAnswer,
@@ -72,11 +75,14 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+//Authentication routes
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    let user = await User.findOne({ email });
+    const lowerCaseEmail = email.toLowerCase();
+
+    let user = await User.findOne({ email: lowerCaseEmail });
     if (!user) {
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }
@@ -111,7 +117,9 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/password/request-reset', async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const lowerCaseEmail = email.toLowerCase();
+
+    const user = await User.findOne({ email: lowerCaseEmail });
     if (!user) {
       return res.status(400).json({ msg: 'User not found' });
     }
@@ -127,7 +135,9 @@ app.post('/api/password/request-reset', async (req, res) => {
 app.post('/api/password/verify-answer', async (req, res) => {
   const { email, securityAnswer } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const lowerCaseEmail = email.toLowerCase();
+
+    const user = await User.findOne({ email: lowerCaseEmail });
     if (!user) {
       return res.status(400).json({ msg: 'User not found' });
     }
@@ -148,7 +158,9 @@ app.post('/api/password/verify-answer', async (req, res) => {
 app.post('/api/password/reset-password', async (req, res) => {
   const { email, newPassword } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const lowerCaseEmail = email.toLowerCase();
+
+    const user = await User.findOne({ email: lowerCaseEmail });
     if (!user) {
       return res.status(400).json({ msg: 'User not found' });
     }
@@ -164,7 +176,6 @@ app.post('/api/password/reset-password', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
-
 
 // Task routes
 app.post('/tasks', auth, async (req, res) => {
