@@ -38,7 +38,6 @@ const LoginScreen = ({ navigation, route, setIsAuthenticated }) => {
           setError('An unexpected error occurred. Please try again.');  // General error message
         }
       } else {
-        console.error('Login failed', err.message);  // Debugging line
         setError('An unexpected error occurred. Please try again.');
       }
     }

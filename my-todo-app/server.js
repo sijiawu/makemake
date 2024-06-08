@@ -63,7 +63,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     jwt.sign(
       payload,
-      'your_jwt_secret',
+      process.env.JWT_SECRET,
       (err, token) => {
         if (err) throw err;
         res.json({ token });
@@ -100,7 +100,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     jwt.sign(
       payload,
-      'your_jwt_secret',
+      process.env.JWT_SECRET,
       (err, token) => {
         if (err) throw err;
         res.json({ token, user });
