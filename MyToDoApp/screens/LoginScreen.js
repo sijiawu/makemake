@@ -30,10 +30,20 @@ const LoginScreen = ({ navigation, route, setIsAuthenticated }) => {
         throw new Error('User object is missing in the response');
       }
     } catch (err) {
-      console.error('Login failed', err.response ? err.response.data : err.message);  // Debugging line
-      setError('Invalid Credentials');
+      if (err.response) {
+        // Handle known error responses from the backend
+        if (err.response.status === 400) {
+          setError(err.response.data.msg);  // Show specific error message
+        } else {
+          setError('An unexpected error occurred. Please try again.');  // General error message
+        }
+      } else {
+        console.error('Login failed', err.message);  // Debugging line
+        setError('An unexpected error occurred. Please try again.');
+      }
     }
   };
+  
 
   return (
     <View style={styles.container}>

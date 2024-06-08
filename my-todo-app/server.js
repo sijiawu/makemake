@@ -84,12 +84,12 @@ app.post('/api/auth/login', async (req, res) => {
 
     let user = await User.findOne({ email: lowerCaseEmail });
     if (!user) {
-      return res.status(400).json({ msg: 'Invalid Credentials' });
+      return res.status(400).json({ msg: 'User not found' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid Credentials' });
+      return res.status(400).json({ msg: 'Incorrect password' });
     }
 
     const payload = {
@@ -101,7 +101,6 @@ app.post('/api/auth/login', async (req, res) => {
     jwt.sign(
       payload,
       'your_jwt_secret',
-      { expiresIn: '1h' },
       (err, token) => {
         if (err) throw err;
         res.json({ token, user });
