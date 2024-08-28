@@ -3,6 +3,7 @@ import { View, StyleSheet, Alert } from 'react-native';
 import { Button, Text, Appbar } from 'react-native-paper';
 import Voice from '@react-native-voice/voice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const HomeScreen = ({ navigation, setIsAuthenticated }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -73,24 +74,60 @@ const HomeScreen = ({ navigation, setIsAuthenticated }) => {
 
       <View style={styles.content}>
         <Text style={styles.welcomeText}>Welcome, {userEmail}!</Text>
-        <Button mode="contained" onPress={() => navigation.navigate('All Tasks')} style={styles.button}>
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('All Tasks')}
+          style={styles.button}
+          icon={() => <Icon name="list" size={20} color="#ffffff" />}
+        >
           View All Tasks
         </Button>
-        <Button mode="contained" onPress={() => navigation.navigate('Tackle Task')} style={styles.button}>
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('Tackle Task')}
+          style={styles.button}
+          icon={() => <Icon name="flag" size={20} color="#ffffff" />}
+        >
           Tackle A Task
         </Button>
-        <Button mode="contained" onPress={() => navigation.navigate('CompletedTasks')} style={styles.button}>
+
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('CompletedTasks')}
+          style={styles.button}
+          icon={() => <Icon name="checkmark-circle" size={20} color="#ffffff" />}
+        >
           View Completed Tasks
         </Button>
-        <Button mode="contained" onPress={() => navigation.navigate('Daily Insight')} style={styles.button}>
+
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('Daily Insight')}
+          style={styles.button}
+          icon={() => <Icon name="thumbs-up" size={20} color="#ffffff" />}
+        >
           Praise me!
         </Button>
-        <Button mode="contained" onPress={() => navigation.navigate('Resistance Analysis')} style={styles.button}>
+
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('Resistance Analysis')}
+          style={styles.button}
+          icon={() => <Icon name="analytics" size={20} color="#ffffff" />}
+        >
           Analyze My Resistance
         </Button>
-        <Button mode="contained" onPress={() => navigation.navigate('New Task')} style={styles.button}>
+
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('New Task')}
+          style={styles.button}
+          icon={() => <Icon name="document-text" size={20} color="#ffffff" />}
+        >
           New Task: Text
         </Button>
+
+
 
         {isRecording ? (
           <View style={styles.recordingContainer}>
