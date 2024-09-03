@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     flex: 1,
-    backgroundColor: '#512DAB',
+    backgroundColor: '#E07D54',
   },
   loadingIndicator: {
     flex: 1,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   taskItem: {
-    backgroundColor: '#7A4BEB',
+    backgroundColor: '#FFD1A0',
     padding: 10,
     marginVertical: 5,
     borderRadius: 8,

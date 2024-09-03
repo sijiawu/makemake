@@ -1,26 +1,22 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, Alert, Button, StyleSheet, SafeAreaView } from 'react-native';
-import axios from '../axiosConfig'; // Make sure the path is correct based on your project structure
+import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Text, Button, TextInput } from 'react-native-paper';
+import axios from '../axiosConfig';
 
-const NewTaskScreen = ({ route, navigation }) => {
-  // States for the task title, description, and reluctance score
-  const { parentId } = route.params || {}; // Destructure and default to an empty object if params is undefined
+const NewTaskScreen = ({ goBack, route }) => {
+  const { parentId } = route?.params || {};
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [reluctanceScore, setReluctanceScore] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  // Function to adjust the reluctance score
-  const adjustScore = (amount) => {
-    const newScore = Math.max(1, Math.min(reluctanceScore + amount, 5)); // Ensure score is between 1 and 5
-    setReluctanceScore(newScore);
-  };
-
-  const saveTaskOrSubtask = async () => {
-    if (!title) {
-      Alert.alert("Validation", "Please fill the title field");
+  const handleCreateTask = async () => {
+    if (!title.trim()) {
+      Alert.alert('Validation Error', 'Task title is required.');
       return;
     }
 
+    setLoading(true);
     const taskData = {
       title,
       description,
@@ -30,96 +26,163 @@ const NewTaskScreen = ({ route, navigation }) => {
     try {
       let response;
       if (parentId) {
-        // Save as a subtask under a parent task
         response = await axios.post(`/tasks/${parentId}/saveSubtasks`, { subtasks: [taskData] });
       } else {
-        // Save as a new independent task
         response = await axios.post('/tasks/saveTasks', { tasks: [taskData] });
       }
-      
-      Alert.alert("Success", "Task saved successfully", [
-        { text: "OK", onPress: () => navigation.navigate('Home') }
-      ]);
+
+      if (response.status === 201) {
+        Alert.alert('Success', 'Task created successfully.');
+        goBack();
+      } else {
+        Alert.alert('Error', 'Failed to create task.');
+      }
     } catch (error) {
-      console.error("Failed to save task:", error);
-      Alert.alert("Error", "Failed to save task");
+      console.error('Failed to create task:', error);
+      Alert.alert('Error', 'An error occurred while creating the task.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Cancel and go back to the previous screen
-  const cancelNewTask = () => {
-    navigation.goBack();
+  const adjustScore = (amount) => {
+    setReluctanceScore((prevScore) => Math.max(1, Math.min(prevScore + amount, 5)));
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TextInput
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-        placeholder="Task Title"
-      />
-      <TextInput
-        style={styles.input}
-        value={description}
-        multiline
-        onChangeText={setDescription}
-        placeholder="Description"
-      />
-      <View style={styles.scoreAdjustmentContainer}>
-        <TouchableOpacity onPress={() => adjustScore(-1)} style={styles.scoreButton}>
-          <Text style={styles.scoreButtonText}>-</Text>
-        </TouchableOpacity>
-        <Text style={styles.score}>{reluctanceScore}</Text>
-        <TouchableOpacity onPress={() => adjustScore(1)} style={styles.scoreButton}>
-          <Text style={styles.scoreButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
-      <Button title="Save" onPress={saveTaskOrSubtask} />
-      <Button title="Cancel" onPress={cancelNewTask} />
-    </SafeAreaView>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Create New Task</Text>
+        <TextInput
+          label="Task Title"
+          value={title}
+          onChangeText={setTitle}
+          style={styles.input}
+          mode="outlined"
+          theme={{ colors: { primary: '#304F6D' } }} // Dark blue border
+        />
+        <TextInput
+          label="Task Description"
+          value={description}
+          onChangeText={setDescription}
+          style={styles.input}
+          mode="outlined"
+          multiline
+          numberOfLines={4}
+          theme={{ colors: { primary: '#304F6D' } }} // Dark blue border
+        />
+        <View style={styles.scoreAdjustmentContainer}>
+          <Button
+            mode="contained"
+            onPress={() => adjustScore(-1)}
+            style={styles.scoreButton}
+            labelStyle={styles.scoreButtonLabel}
+            contentStyle={styles.scoreButtonContent}
+            compact={true}
+          >
+            -
+          </Button>
+          <View style={styles.scoreDisplayContainer}>
+            <Text style={styles.scoreLabel}>Reluctance Score</Text>
+            <Text style={styles.score}>{reluctanceScore}</Text>
+          </View>
+          <Button
+            mode="contained"
+            onPress={() => adjustScore(1)}
+            style={styles.scoreButton}
+            labelStyle={styles.scoreButtonLabel}
+            contentStyle={styles.scoreButtonContent}
+            compact={true}
+          >
+            +
+          </Button>
+        </View>
+        <Button
+          mode="contained"
+          onPress={handleCreateTask}
+          loading={loading}
+          disabled={loading}
+          style={styles.button}
+        >
+          Create Task
+        </Button>
+        <Button mode="text" onPress={goBack} style={styles.backButton} labelStyle={styles.backButtonLabel}>
+          Back
+        </Button>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f2f2f2', // Light gray background to soften the overall look
-    padding: 10,
-    margin: 10,
+    backgroundColor: '#E6E1DD', // Light grayish background
+    justifyContent: 'center',
+  },
+  content: {
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#304F6D', // Dark blue
+    textAlign: 'center',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#cccccc',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 20,
-    fontSize: 16,
-    backgroundColor: '#ffffff', // White background for the text inputs
+    marginBottom: 15,
+    backgroundColor: '#E2F3FD', // Light blue background for inputs
   },
   scoreAdjustmentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
-    paddingHorizontal: 40, // Space out the score adjustment buttons
+    paddingHorizontal: 20,
   },
   scoreButton: {
-    backgroundColor: '#007bff',
-    borderRadius: 50, // Circular buttons
-    width: 45,
-    height: 45,
+    backgroundColor: '#E07D54', // Accent color for buttons
+    borderRadius: 8, // Softer rounded edges
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scoreButtonText: {
-    color: '#ffffff',
-    fontSize: 24, // Larger font size for clarity
+  scoreButtonLabel: {
+    fontSize: 18, // Slightly smaller for better balance
+    color: '#FFFFFF', // White text
+  },
+  scoreButtonContent: {
+    paddingVertical: 0,
+  },
+  scoreDisplayContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  scoreLabel: {
+    fontSize: 14,
+    color: '#899481', // Neutral color for the label
+    marginBottom: 5,
   },
   score: {
-    fontSize: 20,
-    width: 60, // Ensure the score text box does not get squished
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#304F6D', // Dark blue for score number
+  },
+  button: {
+    marginVertical: 10,
+    backgroundColor: '#304F6D', // Dark blue for create task button
+  },
+  backButton: {
+    marginTop: 10,
+  },
+  backButtonLabel: {
+    color: '#899481', // Neutral color for back button
   },
 });
 

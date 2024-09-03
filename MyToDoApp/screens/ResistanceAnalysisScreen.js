@@ -86,12 +86,11 @@ const ResistanceAnalysisScreen = ({ navigation }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     padding: 20,
     flex: 1,
-    backgroundColor: '#512DAB',
+    backgroundColor: '#304F6D', // Darker shade for the analysis screen
   },
   loadingIndicator: {
     flex: 1,
@@ -123,7 +122,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   taskItem: {
-    backgroundColor: '#7A4BEB',
+    backgroundColor: '#899481', // Complementary shade for tasks
     padding: 10,
     marginVertical: 5,
     borderRadius: 8,
@@ -146,5 +145,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
 
 export default ResistanceAnalysisScreen;
