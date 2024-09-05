@@ -103,6 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   analysisText: {
+    fontFamily: 'EB Garamond',
     color: 'white',
     fontSize: 20,
     marginBottom: 20,
