@@ -52,28 +52,39 @@ const NewTaskScreen = ({ goBack, route }) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Create New Task</Text>
-        <TextInput
-          label="Task Title"
-          value={title}
-          onChangeText={setTitle}
-          style={styles.input}
-          mode="outlined"
-          theme={{ colors: { primary: '#304F6D' } }} // Dark blue border
-        />
-        <TextInput
-          label="Task Description"
-          value={description}
-          onChangeText={setDescription}
-          style={styles.input}
-          mode="outlined"
-          multiline
-          numberOfLines={4}
-          theme={{ colors: { primary: '#304F6D' } }} // Dark blue border
-        />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>New Task</Text>
+        
+        {/* Wrapping inputs in a view with fixed height */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            label="Task Title"
+            value={title}
+            onChangeText={setTitle}
+            style={styles.input}
+            mode="outlined"
+            theme={{ colors: { primary: '#304F6D' } }}
+          />
+        </View>
+        
+        <View style={styles.inputContainer}>
+          <TextInput
+            label="Task Description"
+            value={description}
+            onChangeText={setDescription}
+            style={styles.input}
+            mode="outlined"
+            multiline
+            numberOfLines={4}
+            theme={{ colors: { primary: '#304F6D' } }}
+          />
+        </View>
+
         <View style={styles.scoreAdjustmentContainer}>
           <Button
             mode="contained"
@@ -100,18 +111,26 @@ const NewTaskScreen = ({ goBack, route }) => {
             +
           </Button>
         </View>
-        <Button
-          mode="contained"
-          onPress={handleCreateTask}
-          loading={loading}
-          disabled={loading}
-          style={styles.button}
-        >
-          Create Task
-        </Button>
-        <Button mode="text" onPress={goBack} style={styles.backButton} labelStyle={styles.backButtonLabel}>
-          Back
-        </Button>
+
+        <View style={styles.buttonContainer}>
+          <Button
+            mode="contained"
+            onPress={handleCreateTask}
+            loading={loading}
+            disabled={loading}
+            style={styles.button}
+          >
+            Create Task
+          </Button>
+          <Button
+            mode="text"
+            onPress={goBack}
+            style={styles.backButton}
+            labelStyle={styles.backButtonLabel}
+          >
+            Back
+          </Button>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -133,8 +152,12 @@ const styles = StyleSheet.create({
     color: '#304F6D', // Dark blue
     textAlign: 'center',
   },
-  input: {
+  inputContainer: {
+    height: 60, // Fixed height to prevent shifting when placeholder appears/disappears
     marginBottom: 15,
+  },
+  input: {
+    flex: 1,
     backgroundColor: '#E2F3FD', // Light blue background for inputs
   },
   scoreAdjustmentContainer: {
@@ -146,14 +169,14 @@ const styles = StyleSheet.create({
   },
   scoreButton: {
     backgroundColor: '#E07D54', // Accent color for buttons
-    borderRadius: 8, // Softer rounded edges
+    borderRadius: 8,
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   scoreButtonLabel: {
-    fontSize: 18, // Slightly smaller for better balance
+    fontSize: 18,
     color: '#FFFFFF', // White text
   },
   scoreButtonContent: {
@@ -166,23 +189,25 @@ const styles = StyleSheet.create({
   },
   scoreLabel: {
     fontSize: 14,
-    color: '#899481', // Neutral color for the label
+    color: '#899481',
     marginBottom: 5,
   },
   score: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#304F6D', // Dark blue for score number
+    color: '#304F6D',
+  },
+  buttonContainer: {
+    marginVertical: 10,
   },
   button: {
-    marginVertical: 10,
-    backgroundColor: '#304F6D', // Dark blue for create task button
+    backgroundColor: '#304F6D',
   },
   backButton: {
     marginTop: 10,
   },
   backButtonLabel: {
-    color: '#899481', // Neutral color for back button
+    color: '#899481',
   },
 });
 
