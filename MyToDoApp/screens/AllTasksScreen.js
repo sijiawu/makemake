@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
+import { IconButton } from 'react-native-paper';
 import axios from '../axiosConfig';
 import { useNavigation } from '@react-navigation/native';
 
@@ -66,23 +67,23 @@ const AllTasksScreen = () => {
               style={[styles.backBtn, styles.backBtnEdit]}
               onPress={() => navigateToEdit(data.item)}
             >
-              <Text style={styles.backTextWhite}>Edit</Text>
+              <IconButton icon="pencil" color="#FFF" />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.backBtn, styles.backBtnDone]}
               onPress={() => markTaskAsCompleted(data.item._id)}
             >
-              <Text style={styles.backTextWhite}>Done</Text>
+              <IconButton icon="check" color="#FFF" />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.backBtn, styles.backBtnDelete]}
               onPress={() => deleteTask(data.item._id)}
             >
-              <Text style={styles.backTextWhite}>Delete</Text>
+              <IconButton icon="delete" color="#FFF" />
             </TouchableOpacity>
           </View>
         )}
-        rightOpenValue={-180} // Adjust to fit all three buttons
+        rightOpenValue={-180} // Keep the value to fit all three buttons
       />
     </View>
   );
@@ -91,11 +92,11 @@ const AllTasksScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f4f7',
+    backgroundColor: '#E2F3FD',
     padding: 10,
   },
   taskItem: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#E2F3FD',
     padding: 20,
     borderRadius: 10,
     marginVertical: 5,
@@ -104,20 +105,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
     elevation: 2,
+    borderColor: 'black',
+    borderWidth: 1,
   },
   taskTitle: {
     fontWeight: 'bold',
     fontSize: 18,
+    color: 'black',
     marginBottom: 5,
   },
   taskDetail: {
     fontSize: 14,
-    color: '#666666',
+    color: 'black',
     marginBottom: 5,
   },
   rowBack: {
     alignItems: 'center',
-    backgroundColor: '#DDD',
+    backgroundColor: '#E2F3FD',
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -125,6 +129,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
     height: '100%',
+    borderWidth: 1,
   },
   backBtn: {
     alignItems: 'center',
@@ -132,24 +137,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: 60, // Make the buttons narrower
+    width: 60, // Keeping the original width
+    height: '100%', // Ensuring full height for the buttons
   },
   backBtnEdit: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: 'E2F3FD',
     right: 120,
+    borderColor: 'black',
+    borderRightWidth: 1,
   },
   backBtnDone: {
-    backgroundColor: 'green',
-    right: 0,
+    backgroundColor: 'E2F3FD',
+    right: 60,
+    borderColor: 'black',
+    borderRightWidth: 1,
   },
   backBtnDelete: {
-    backgroundColor: 'red',
-    right: 60,
-  },
-  backTextWhite: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold',
+    backgroundColor: 'E2F3FD',
+    right: 0,
   },
 });
 
